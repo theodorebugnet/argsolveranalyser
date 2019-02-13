@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.13)
+project(solveranalyser)
+
+set(Boost_USE_STATIC_LIBS OFF) 
+set(Boost_USE_MULTITHREADED ON)  
+set(Boost_USE_STATIC_RUNTIME OFF) 
+find_package(Boost 1.69.0 REQUIRED COMPONENTS program_options) 
+
+SET(STORE_PATH "./store/")
+SET(INSTALL_PREF "/home/void/Uni/Y3/PRJ/install/")
+
+if (Boost_FOUND)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CXX_STANDARD_REQUIRED ON)
+    project(graph_analyser)
+    add_subdirectory(graphAnalyser)
+    target_compile_definitions(graph_analyser PRIVATE STORE_PATH="${STORE_PATH}")
+    set(CMAKE_INSTALL_PREFIX ${INSTALL_PREF} CACHE PATH "..." FORCE)
+    install(TARGETS graph_analyser RUNTIME DESTINATION .)
+    install(DIRECTORY store DESTINATION .)
+endif()
