@@ -5,7 +5,7 @@ class SizeMetric : public Metric {
     public:
         SizeMetric() :Metric("Size") {
         }
-        int calculate(Graph& graph) {
+        int calculate(const Graph& graph) const {
             return graph.getArgs().size();
         };
 };
