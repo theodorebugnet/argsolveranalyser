@@ -9,9 +9,10 @@
 #include <memory>
 #include <exception>
 #include <fstream>
+#include <set>
 #include "graph.h"
 #include "metric.h"
-#include "options.h"
+#include "util.h"
 #include "sizeMetric.cxx"
 #include "parse.h"
 
@@ -25,7 +26,7 @@ namespace fs = std::filesystem;
     #define CONF_PATH "./coonf"
 #endif
 
-std::vector<std::string> graphFiles;
+std::set<std::string> graphFiles;
 std::vector<std::unique_ptr<Metric>> metrics;
 
 int main(int argc, char** argv) {
@@ -44,7 +45,9 @@ int main(int argc, char** argv) {
         ("store-path,s", po::value<std::string>()->default_value(STORE_PATH), "Store directory")
         ("graphs,g", po::value<std::vector<std::string>>()->multitoken()->composing(), "A list of loose graph files. Disables the store.")
         ("graph-dirs,d", po::value<std::vector<std::string>>()->multitoken()->composing(), "A list of directories containing graph files. Disables the store.")
-        ("forcestore,f", po::bool_switch(), "Use the store despite the --graphs or --graph-dirs options being specified.");
+        ("force-store", po::bool_switch(), "Use the store's list of graphs despite the --graphs or --graph-dirs options being specified. (The union will be taken.)")
+        ("force-recalculate,r", po::bool_switch(), "When an existing results file is found, do not trust the existing results and recalculate all metrics, overwriting any conflicting values.")
+        ("clobber", po::bool_switch(), "When an existing results file is found for a given graph, truncate it before writing the new results.\nThis is useful if some metric has been deprecated and is not used anymore, but still clogs up the results files.");
 
     po::options_description cmdOpts;
     cmdOpts.add(cmdOnly).add(allSrcs);
@@ -71,21 +74,24 @@ int main(int argc, char** argv) {
     /******** Handle parsed options ********/
     if (opts.count("help")) {
         std::cout << "Usage: graph_analyser [options]" << std::endl;
+        std::cout << "Command line options generally override config file options, except when they specify lists." << std::endl;
+        std::cout << "List arguments get merged from both sources. Specify a non-existing config file to avoid this." << std::endl;
         std::cout << std::endl;
         std::cout << cmdOpts << std::endl;
         return 0;
     }
 
-    std::cout << "STORE ROOT IS: " << opts["store-path"].as<std::string>()  << std::endl;
-
     /******** Validate store directory structure ********/
-
+    //Maybe? Honestly probably not
 
     /******** Construct list of graphs ********/
     bool useStore = true;
     if (opts.count("graphs")) {
         useStore = false;
-        graphFiles = opts["graphs"].as<std::vector<std::string>>();
+        std::vector<std::string> tmpGraphFiles = opts["graphs"].as<std::vector<std::string>>();
+        for (std::string tmpgf : tmpGraphFiles) {
+            graphFiles.insert(tmpgf);
+        }
     }
 
     std::vector<std::string> graphDirs;
@@ -94,13 +100,13 @@ int main(int argc, char** argv) {
         graphDirs = opts["graph-dirs"].as<std::vector<std::string>>();
     }
     if (useStore || opts["forcestore"].as<bool>()) {
-        graphDirs.push_back(opts["store-path"].as<std::string>());
+        graphDirs.push_back(opts["store-path"].as<std::string>() + "/graphs/");
     }
 
     for (std::string dir : graphDirs) {
         for (auto& dirent : fs::recursive_directory_iterator(dir, fs::directory_options::follow_directory_symlink)) {
             if (dirent.is_regular_file()) {
-                graphFiles.push_back(dirent.path().string());;
+                graphFiles.insert(dirent.path().string());;
             }
         }
     }
@@ -109,11 +115,38 @@ int main(int argc, char** argv) {
     metrics.push_back(std::make_unique<SizeMetric>());
 
     /******** Loop over graphs: parse graph, run metrics, save results ********/
+    fs::path outDir(opts["store-path"].as<std::string>() + "/graph-scores/");
+    if (fs::exists(outDir)) {
+        if (!fs::is_directory(outDir)) {
+            std::cerr << "Malformed store: entry \"/graph-scores/\" is not a directory" << std::endl;
+            return 1;
+        }
+    } else {
+        fs::create_directory(outDir);
+    }
     for (std::string graphFile : graphFiles) {
         const Graph parsedGraph = *parseFile(graphFile);
-        for (const auto& m : metrics) {
-            std::cout << "Graph " << graphFile << " with hash: " << parsedGraph.hash() << "; under metric " << m->name << " gives score " << m->calculate(parsedGraph) << std::endl;
+        fs::path ofp = outDir / parsedGraph.hash();
+        if (fs::exists(ofp)) {
+            //TODO: implement --clobber
+            std::cout << "INFO: graph " << graphFile << " has already been analysed. Skipping. "
+                << "Use the --force-recalculate option to change this behaviour." << std::endl;
+            continue;
         }
+        std::ofstream graphOut(ofp.c_str());
+        if (!graphOut) {
+            std::cerr << "ERROR: Unable to write to graph output file " << ofp.string()
+                << " for graph read from " << graphFile << ". Skipping graph!" << std::endl;
+        }
+
+        for (const auto& m : metrics) {
+            int score = m->calculate(parsedGraph);
+            //TODO: intelligently update metric values
+            graphOut << m->name << "=" << score << std::endl;
+            //std::cout << "Graph " << graphFile << " with hash: " << parsedGraph.hash()
+                << "; under metric " << m->name << " gives score " << score << std::endl;
+        }
+        graphOut.close();
     }
 
     /* Metric* m = new SizeMetric(); */

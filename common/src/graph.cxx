@@ -6,11 +6,14 @@
 #include <memory>
 #include "graph.h"
 
-Graph::Graph(std::vector<std::shared_ptr<Argument>> args, std::vector<std::pair<std::shared_ptr<Argument>, std::shared_ptr<Argument>>> attacks, std::string hash) : hashval(hash), args(args), attacks(attacks) {
-}
+Graph::Graph(std::string infname) : infname(infname) {}
 
 void Graph::setHash(std::string hash) {
     hashval = hash;
+}
+
+std::string Graph::fname() const {
+    return infname;
 }
 
 std::string Graph::hash() const {

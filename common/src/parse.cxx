@@ -2,27 +2,30 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdint>
+#include <iostream>
 #include "graph.h"
 #include "parse.h"
 #include "SpookyV2.h"
 
-constexpr int seed1 = 0;
-constexpr int seed2 = 0;
+constexpr uint64_t seed1 = 1;
+constexpr uint64_t seed2 = 2;
 
 Graph* parseFile(std::string path) {
-    Graph* ret = new Graph();
+    Graph* ret = new Graph(path);
 
     std::ifstream problemFile(path);
     std::string tokenbuff, secondbuff;
     SpookyHash graphHash;
-    graphHash.Init(0, 0);
-
+    graphHash.Init(seed1, seed2);
     enum States : bool { arguments, attacks };
     States state = arguments;
+    const char* hashbuff;
+
     for (int ctr = 0; problemFile >> tokenbuff; ++ctr) {
-        graphHash.Update(&tokenbuff, tokenbuff.length());
         switch (state) {
             case arguments:
+                hashbuff = tokenbuff.c_str();
+                graphHash.Update(hashbuff, tokenbuff.length());
                 if (tokenbuff == "#") {
                     state = attacks;
                 } else {
@@ -35,6 +38,8 @@ Graph* parseFile(std::string path) {
                     std::cerr << "Malformed tgf file: no attack destination on line " << ctr << std::endl;
                     return nullptr;
                 } else {
+                    hashbuff = (tokenbuff + secondbuff).c_str();
+                    graphHash.Update(hashbuff, tokenbuff.length());
                     ret->addAttack(tokenbuff, secondbuff);
                 }
                 break;

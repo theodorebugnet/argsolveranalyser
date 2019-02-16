@@ -42,7 +42,7 @@ struct Argument {
 
 class Graph {
     public:
-        Graph(std::vector<std::shared_ptr<Argument>>, std::vector<std::pair<std::shared_ptr<Argument>, std::shared_ptr<Argument>>>, std::string hash);
+        Graph(std::string);
         Graph() {};
         void addArgument(Argument*);
         void addArgument(std::string, int);
@@ -56,8 +56,10 @@ class Graph {
         void addAttack(Argument*, Argument*);
         void addAttack(std::string, std::string);
         std::string hash() const;
+        std::string fname() const;
     private:
         std::string hashval;
+        std::string infname;
         std::vector<std::shared_ptr<Argument>> args;
         std::vector<std::pair<std::shared_ptr<Argument>, std::shared_ptr<Argument>>> attacks;
 };
