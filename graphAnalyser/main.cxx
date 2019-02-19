@@ -15,6 +15,7 @@
 #include "util.h"
 #include "sizeMetric.cxx"
 #include "parse.h"
+#include "metricset.h"
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
@@ -115,6 +116,8 @@ int main(int argc, char** argv) {
     metrics.push_back(std::make_unique<SizeMetric>());
 
     /******** Loop over graphs: parse graph, run metrics, save results ********/
+
+    //Ensure output directory is good
     fs::path outDir(opts["store-path"].as<std::string>() + "/graph-scores/");
     if (fs::exists(outDir)) {
         if (!fs::is_directory(outDir)) {
@@ -124,37 +127,45 @@ int main(int argc, char** argv) {
     } else {
         fs::create_directory(outDir);
     }
+
+    //loop over graphs
     for (std::string graphFile : graphFiles) {
-        const Graph parsedGraph = *parseFile(graphFile);
+        const Graph& parsedGraph = *parseFile(graphFile);
         fs::path ofp = outDir / parsedGraph.hash();
-        if (fs::exists(ofp)) {
-            //TODO: implement --clobber
+        if (fs::exists(ofp) && !opts["force-recalculate"].as<bool>()) {
             std::cout << "INFO: graph " << graphFile << " has already been analysed. Skipping. "
                 << "Use the --force-recalculate option to change this behaviour." << std::endl;
             continue;
         }
+
+        //prepare results set
+        MetricSet mset(ofp);
+
+        if (opts["clobber"].as<bool>()) {
+            mset.clear();
+        }
+
+        //check we can output
         std::ofstream graphOut(ofp.c_str());
         if (!graphOut) {
             std::cerr << "ERROR: Unable to write to graph output file " << ofp.string()
                 << " for graph read from " << graphFile << ". Skipping graph!" << std::endl;
         }
+        graphOut.close();
 
+        //actually do the calculations for every metric
         for (const auto& m : metrics) {
             int score = m->calculate(parsedGraph);
-            //TODO: intelligently update metric values
-            graphOut << m->name << "=" << score << std::endl;
-            //std::cout << "Graph " << graphFile << " with hash: " << parsedGraph.hash()
-                << "; under metric " << m->name << " gives score " << score << std::endl;
+            mset.setScore(m->name, score);
         }
-        graphOut.close();
-    }
 
-    /* Metric* m = new SizeMetric(); */
-    /* Argument a1 = Argument("a1", 0); */
-    /* std::vector<Argument> args = std::vector<Argument>(); */
-    /* std::map<Argument, Argument> attacks = std::map<Argument, Argument>(); */
-    /* args.push_back(a1); */
-    /* Graph g = Graph(args, attacks); */
-    /* g.printArgs(); */
-    /* std::cout << "Metric " << m->name << " gives score " << m->calculate(g) << std::endl; */
+        //finally save the output
+        try {
+            mset.save();
+        } catch (std::exception& e) {
+            std::cerr << "ERROR: Failure trying to write output file " << ofp.string() << " for graph " << graphFile << ". Exception message:" << std::endl;
+            std::cerr << e.what() << std::endl;
+            std::cerr << "Skipping graph!" << std::endl;
+        }
+    }
 }
