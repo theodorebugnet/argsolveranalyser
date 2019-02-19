@@ -50,9 +50,8 @@ class Graph {
         void printAttacks() const;
         void printOut() const;
         void setHash(std::string);
-        const std::vector<std::shared_ptr<Argument>>& getArgs() const {
-            return args;
-        }
+        const std::vector<std::shared_ptr<Argument>>& getArgs() const;
+        const std::vector<std::pair<std::shared_ptr<Argument>, std::shared_ptr<Argument>>>& getAttacks() const;
         void addAttack(Argument*, Argument*);
         void addAttack(std::string, std::string);
         std::string hash() const;

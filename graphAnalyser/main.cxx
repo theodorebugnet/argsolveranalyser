@@ -14,6 +14,7 @@
 #include "metric.h"
 #include "util.h"
 #include "sizeMetric.cxx"
+#include "sparsenessMetric.cxx"
 #include "parse.h"
 #include "metricset.h"
 
@@ -83,7 +84,7 @@ int main(int argc, char** argv) {
     }
 
     /******** Validate store directory structure ********/
-    //Maybe? Honestly probably not
+    //Maybe? Honestly probably not. At least not centrally: relevant parts will check it locally
 
     /******** Construct list of graphs ********/
     bool useStore = true;
@@ -114,6 +115,7 @@ int main(int argc, char** argv) {
 
     /******** Construct list of metrics ********/
     metrics.push_back(std::make_unique<SizeMetric>());
+    metrics.push_back(std::make_unique<SparsenessMetric>());
 
     /******** Loop over graphs: parse graph, run metrics, save results ********/
 
@@ -155,7 +157,7 @@ int main(int argc, char** argv) {
 
         //actually do the calculations for every metric
         for (const auto& m : metrics) {
-            int score = m->calculate(parsedGraph);
+            double score = m->calculate(parsedGraph);
             mset.setScore(m->name, score);
         }
 

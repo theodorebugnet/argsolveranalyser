@@ -27,6 +27,14 @@ void Graph::printArgs() const {
     std::cout << std::endl;
 }
 
+const std::vector<std::shared_ptr<Argument>>& Graph::getArgs() const {
+    return args;
+}
+
+const std::vector<std::pair<std::shared_ptr<Argument>, std::shared_ptr<Argument>>>& Graph::getAttacks() const {
+    return attacks;
+}
+
 void Graph::printAttacks() const {
     for (auto attack : attacks) {
         std::cout << attack.first->name << " attacks " << attack.second->name << std::endl;

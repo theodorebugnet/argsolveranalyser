@@ -13,13 +13,13 @@ class MetricSet {
     public:
         MetricSet(fs::path);
         bool hasScore(std::string) const;
-        int getScore(std::string) const;
-        void setScore(std::string, int);
+        double getScore(std::string) const;
+        void setScore(std::string, double);
         void save() const;
         void clear();
     private:
         fs::path scoreFilePath;
-        std::map<std::string, int> metricScores;
+        std::map<std::string, double> metricScores;
 };
 
 #endif

@@ -14,7 +14,7 @@ MetricSet::MetricSet(fs::path scorefile) : scoreFilePath(scorefile) {
     }
 
     for (std::string namebuff, scorebuff; std::getline(infile, namebuff, '=') && std::getline(infile, scorebuff);) {
-        metricScores[namebuff] = std::stoi(scorebuff);
+        metricScores[namebuff] = std::stod(scorebuff);
     }
 }
 
@@ -22,11 +22,11 @@ bool MetricSet::hasScore(std::string metricName) const {
     return metricScores.find(metricName) != metricScores.end();
 }
 
-int MetricSet::getScore(std::string metricName) const {
+double MetricSet::getScore(std::string metricName) const {
     return metricScores.at(metricName);
 }
 
-void MetricSet::setScore(std::string metricName, int score) {
+void MetricSet::setScore(std::string metricName, double score) {
     metricScores[metricName] = score;
 }
 
