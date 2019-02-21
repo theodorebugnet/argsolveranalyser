@@ -50,6 +50,10 @@ void Graph::addArgument(Argument* argument) {
     args.push_back(std::shared_ptr<Argument>(argument));
 }
 
+void Graph::addArgument(std::string name, int id) {
+    args.push_back(std::shared_ptr<Argument>(new Argument(name, id)));
+}
+
 void Graph::addAttack(Argument* source, Argument* destination) {
     attacks.push_back(std::make_pair(std::shared_ptr<Argument>(source), std::shared_ptr<Argument>(destination)));
 }

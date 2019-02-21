@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 class MetricSet {
     public:
         MetricSet(fs::path);
-        bool hasScore(std::string) const;
+        bool exists(std::string) const;
         double getScore(std::string) const;
         void setScore(std::string, double);
         void save() const;
