@@ -4,9 +4,7 @@
 #include "metricset.h"
 
 MetricSet::MetricSet(fs::path scorefile) : scoreFilePath(scorefile) {
-    std::cout << "  ##MSET: loading from " << scorefile.string() << std::endl;
     if (!fs::exists(scorefile)) { //no scores yet
-        std::cout << "      ##MSET: does not exist, returning empty set" << std::endl;
         return;
     }
 
@@ -16,7 +14,6 @@ MetricSet::MetricSet(fs::path scorefile) : scoreFilePath(scorefile) {
     }
 
     for (std::string namebuff, scorebuff; std::getline(infile, namebuff, '=') && std::getline(infile, scorebuff);) {
-        std::cout << "      ##MSET: loading in metric " << namebuff << " with score " << scorebuff << std::endl;
         metricScores[namebuff] = std::stod(scorebuff);
     }
     infile.close();

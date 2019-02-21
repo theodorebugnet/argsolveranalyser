@@ -216,29 +216,15 @@ int main(int argc, char** argv) {
         MetricSet mset(ofp);
 
         if (opts["clobber"].as<bool>()) {
-            std::cout << "LOBBERINBGA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA<S-F2>" << std::endl;
             mset.clear();
         }
-
-        /*if (fs::exists(ofp) && !opts["force-recalculate"].as<bool>()) {
-            std::cout << "INFO: graph " << graphFile << " has already been analysed, "
-                << "or is equivalent to a previously analysed file. Skipping. "
-                << "Use the --force-recalculate option to change this behaviour." << std::endl;
-            continue;
-        }*/
-
-        //check we can output
-        /*std::ofstream graphOut(ofp.c_str());
-        if (!graphOut) {
-            std::cerr << "ERROR: Unable to write to graph output file " << ofp.string()
-                << " for graph read from " << graphFile << ". Skipping graph!" << std::endl;
-        }
-        graphOut.close();*/
 
         //actually do the calculations for every metric
         for (const auto& m : metrics) {
             if (mset.exists(m->name) && !forcecalc) { //skip if already calculated
-                std::cout << "DIAGNOSTIC: metric " << m->name << " already exists" << std::endl;
+                if (dry_run) {
+                    std::cout << "    (dry run) skipping metric " << m->name << " as it already exists and -f wasn't set" << std::endl;
+                }
                 continue;
             }
 
