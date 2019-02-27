@@ -14,7 +14,12 @@ MetricSet::MetricSet(fs::path scorefile) : scoreFilePath(scorefile) {
     }
 
     for (std::string namebuff, scorebuff; std::getline(infile, namebuff, '=') && std::getline(infile, scorebuff);) {
-        metricScores[namebuff] = std::stod(scorebuff);
+        try {
+            metricScores[namebuff] = std::stod(scorebuff);
+        } catch (std::exception& e) {
+            std::cerr << "File " << scorefile.string() << " contains invalid metric value for " << namebuff <<
+                ". Error thrown: " << e.what() << ". Ignoring this metric for the current file." << std::endl;
+        }
     }
     infile.close();
 }

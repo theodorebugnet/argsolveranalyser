@@ -18,6 +18,7 @@
 #include "sparsenessMetric.cxx"
 #include "parse.h"
 #include "metricset.h"
+#include "_externalMetric.cxx"
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
@@ -38,7 +39,6 @@ int main(int argc, char** argv) {
     /******** Preliminary list of metrics ********/
     metrics.push_back(std::make_unique<SizeMetric>());
     metrics.push_back(std::make_unique<SparsenessMetric>());
-
 
     /******** Define configuration options ********/
     //only for command line
@@ -97,14 +97,33 @@ int main(int argc, char** argv) {
         std::cout << cmdOpts << std::endl;
         return 0;
     }
+    //list-metrics handled below, after external metrics have been loaded
+    if (opts["dry-run"].as<bool>()) {
+        dry_run = true;
+    }
+
+    /******** Construct external metrics ********/
+    fs::perms any_exec = fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec;
+    fs::path extmetricp(opts["store-path"].as<std::string>() + "/external-metrics");
+    if (fs::is_directory(extmetricp)) {
+        for (auto& dirent : fs::directory_iterator(extmetricp)){ //subdirectories are not traversed
+            if (!dirent.is_regular_file()) {
+                continue;
+            }
+            fs::perms permissions = dirent.status().permissions();
+            if ((permissions & any_exec) != fs::perms::none) { //is executable
+                fs::path path = dirent.path();
+                metrics.push_back(std::make_unique<ExternalMetric>(path.stem(), path.string())); //metric name is just filename w/o extension
+            }
+        }
+    }
+
+    //handle last "print and exit" type option, now that we have the required list
     if (opts.count("list-metrics")) {
         for (const std::unique_ptr<Metric>& m : metrics) {
             std::cout << m->name << std::endl;
         }
         return 0;
-    }
-    if (opts["dry-run"].as<bool>()) {
-        dry_run = true;
     }
 
     /******** Validate store directory structure ********/
@@ -207,13 +226,26 @@ int main(int argc, char** argv) {
         }
         Graph* graphPtr = parseFile(graphFile);
         if (!graphPtr) {
-            std::cerr << "Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
+            std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
             continue;
         }
         const Graph& parsedGraph = *graphPtr;
         fs::path ofp = outDir / parsedGraph.hash();
 
-        MetricSet mset(ofp);
+        std::unique_ptr<MetricSet> mset_ptr;
+        try {
+            mset_ptr = std::make_unique<MetricSet>(ofp);
+        } catch (std::exception& e) {
+            std::cerr << "ERROR: Unable to load file of existing results: " << ofp.string() << " for graph: " << graphFile
+                << ". Skipping graph; please check permissions, or delete the file if you do not wish to keep the existing results, then re-run the "
+                << "analyser for this graph using the -g option." << std::endl;
+            continue;
+        }
+        if (!mset_ptr) {
+            std::cerr << "DEBUG: This should never show up. mset_ptr is null despite having been constructed. Skipping graphs " << graphFile << std::endl;
+            continue;
+        }
+        MetricSet& mset = *mset_ptr;
 
         if (opts["clobber"].as<bool>()) {
             mset.clear();
@@ -231,8 +263,12 @@ int main(int argc, char** argv) {
             if (dry_run) {
                 std::cout << "    (dry run) normally would run metric " << m->name << " here" << std::endl;
             } else {
-                double score = m->calculate(parsedGraph);
-                mset.setScore(m->name, score);
+                try {
+                    double score = m->calculate(parsedGraph);
+                    mset.setScore(m->name, score);
+                } catch (std::exception& e) {
+                    std::cerr << "ERROR: Error calculating metric " << m->name << ": " << e.what() << ". Skipping this metric." << std::endl;
+                }
             }
         }
 
