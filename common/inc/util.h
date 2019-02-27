@@ -1,6 +1,7 @@
-#ifndef OPTIONS_H
-#define OPTIONS_H
-#include <boost/program_options/variables_map.hpp>
+#include <string>
+#include <memory>
+#include <vector>
+#include "graph.h"
 
-extern boost::program_options::variables_map opts;
-#endif
+std::set<std::string> get_graphset();
+Graph* parseFile(std::string path);

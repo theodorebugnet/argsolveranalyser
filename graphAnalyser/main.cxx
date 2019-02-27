@@ -13,10 +13,10 @@
 #include <unordered_set>
 #include "graph.h"
 #include "metric.h"
-#include "util.h"
+#include "opts.h"
 #include "sizeMetric.cxx"
 #include "sparsenessMetric.cxx"
-#include "parse.h"
+#include "util.h"
 #include "metricset.h"
 #include "_externalMetric.cxx"
 
