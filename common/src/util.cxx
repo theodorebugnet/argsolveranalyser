@@ -16,15 +16,15 @@ namespace fs = std::filesystem;
 constexpr uint64_t seed1 = 1;
 constexpr uint64_t seed2 = 2;
 
-std::set<std::string> get_graphset() {
-    std::set<std::string> ret;
+std::vector<std::string> get_graphlist() {
+    std::vector<std::string> ret;
     bool useStore = true;
     std::vector<std::string> tmpGraphFiles;
     if (!opts["graphs"].empty()) {
         useStore = false;
         tmpGraphFiles = opts["graphs"].as<std::vector<std::string>>();
         for (std::string tmpgf : tmpGraphFiles) {
-            ret.insert(tmpgf);
+            ret.push_back(tmpgf);
         }
     }
     std::vector<std::string> graphDirs;
@@ -40,11 +40,20 @@ std::set<std::string> get_graphset() {
     for (std::string dir : graphDirs) {
         for (auto& dirent : fs::recursive_directory_iterator(dir, fs::directory_options::follow_directory_symlink)) {
             if (dirent.is_regular_file()) {
-                ret.insert(dirent.path().string());;
+                ret.push_back(dirent.path().string());;
             }
         }
     }
 
+    return ret;
+}
+
+std::set<std::string> get_graphset() {
+    std::set<std::string> ret;
+    std::vector<std::string> tmp = get_graphlist();
+    for (auto& g : tmp) {
+        ret.insert(g);
+    }
     return ret;
 }
 

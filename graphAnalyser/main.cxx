@@ -20,15 +20,12 @@
 #include "metricset.h"
 #include "_externalMetric.cxx"
 
+#ifndef CONF_PATH
+    #define CONF_PATH "./analyser.coonf"
+#endif
+
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
-
-#ifndef STORE_PATH
-    #define STORE_PATH "./stoore"
-#endif
-#ifndef CONF_PATH
-    #define CONF_PATH "./coonf"
-#endif
 
 std::set<std::string> graphFiles;
 std::vector<std::unique_ptr<Metric>> metrics;
@@ -43,19 +40,14 @@ int main(int argc, char** argv) {
     /******** Define configuration options ********/
     //only for command line
     po::options_description cmdOnly("Command-line only options");
+    addHelpAndConfOpts(cmdOnly, CONF_PATH);
     cmdOnly.add_options()
-        ("help,h", "Show this help and exit.")
-        ("conf,c", po::value<std::string>()->default_value(CONF_PATH), "Path to configuration file")
-        ("noconf", po::bool_switch(), "Do not parse any configuration file (to turn off the default one).")
         ("list-metrics,l", "Print a list of available metriccs and exit.");
 
     //for both cmdline and config file
     po::options_description allSrcs("All configuration");
+    addGraphFileOpts(allSrcs);
     allSrcs.add_options()
-        ("store-path,s", po::value<std::string>()->default_value(STORE_PATH), "Store directory")
-        ("graphs,g", po::value<std::vector<std::string>>()->multitoken()->composing(), "A list of loose graph files. Disables the store.")
-        ("graph-dirs,d", po::value<std::vector<std::string>>()->multitoken()->composing(), "A list of directories containing graph files. Disables the store.")
-        ("use-store", po::bool_switch(), "Use the store's list of graphs despite the --graphs or --graph-dirs options being specified. (The union will be taken.)\nThis does nothing if neither of those options are also specified, as then the store is used by default.")
         ("force-recalculate,f", po::bool_switch(), "When an existing results file is found, do not trust the existing results and recalculate all metrics, overwriting any conflicting values.")
         ("clobber", po::bool_switch(), "When an existing results file is found for a given graph, truncate it before writing the new results.\nThis is useful if some metric has been deprecated and is not used anymore, but still clogs up the results files.")
         ("metric-whitelist,w", po::value<std::vector<std::string>>()->multitoken()->composing(), "A whitelist of metrics to use. Only these will be used to process the graph, all others will be skipped.\n")
@@ -125,9 +117,6 @@ int main(int argc, char** argv) {
         }
         return 0;
     }
-
-    /******** Validate store directory structure ********/
-    //Maybe? Honestly probably not. At least not centrally: relevant parts will check it locally
 
     /******** Construct list of metrics ********/
     std::unordered_set<std::string> whitelist;
