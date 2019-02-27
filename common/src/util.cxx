@@ -1,3 +1,2 @@
-#include <iostream>
 #include "util.h"
-namespace po = boost::program_options;
+boost::program_options::variables_map opts;

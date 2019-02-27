@@ -5,12 +5,48 @@
 #include <iostream>
 #include <set>
 #include <algorithm>
+#include <filesystem>
 #include "graph.h"
 #include "parse.h"
 #include "SpookyV2.h"
+#include "util.h"
+
+namespace fs = std::filesystem;
 
 constexpr uint64_t seed1 = 1;
 constexpr uint64_t seed2 = 2;
+
+std::set<std::string> get_graphset() {
+    std::set<std::string> ret;
+    bool useStore = true;
+    std::vector<std::string> tmpGraphFiles;
+    if (!opts["graphs"].empty()) {
+        useStore = false;
+        tmpGraphFiles = opts["graphs"].as<std::vector<std::string>>();
+        for (std::string tmpgf : tmpGraphFiles) {
+            ret.insert(tmpgf);
+        }
+    }
+    std::vector<std::string> graphDirs;
+    if (!opts["graph-dirs"].empty()) {
+        useStore = false;
+        graphDirs = opts["graph-dirs"].as<std::vector<std::string>>();
+    }
+    if (useStore || opts["use-store"].as<bool>()) {
+        if (!opts["store-path"].empty()) {
+            graphDirs.push_back(opts["store-path"].as<std::string>() + "/graphs/");
+        }
+    }
+    for (std::string dir : graphDirs) {
+        for (auto& dirent : fs::recursive_directory_iterator(dir, fs::directory_options::follow_directory_symlink)) {
+            if (dirent.is_regular_file()) {
+                ret.insert(dirent.path().string());;
+            }
+        }
+    }
+
+    return ret;
+}
 
 Graph* parseFile(std::string path) {
     std::set<std::string> args;
@@ -57,45 +93,6 @@ Graph* parseFile(std::string path) {
         ret->addAttack(att.first, att.second);
     }
 
-    uint64_t hash1;
-    uint64_t hash2;
-    graphHash.Final(&hash1, &hash2);
-    std::stringstream streamtmp;
-    streamtmp << std::hex << hash1 << hash2;
-    ret->setHash(streamtmp.str());
-    return ret;
-}
-
-Graph* parseFile_old_baddedup(std::string path) {
-    Graph* ret = new Graph(path);
-    std::ifstream problemFile(path);
-    std::string tokenbuff, secondbuff;
-    SpookyHash graphHash;
-    graphHash.Init(seed1, seed2);
-    enum States : bool { arguments, attacks };
-    States state = arguments;
-    for (int ctr = 0; problemFile >> tokenbuff; ++ctr) {
-        switch (state) {
-            case arguments:
-                graphHash.Update(tokenbuff.c_str(), tokenbuff.length());
-                if (tokenbuff == "#") {
-                    state = attacks;
-                } else {
-                    Argument* arg = new Argument(tokenbuff, ctr);
-                    ret->addArgument(arg);
-                }
-                break;
-            case attacks:
-                if (!(problemFile >> secondbuff)) {
-                    std::cerr << "Malformed tgf file: no attack destination on line " << ctr << std::endl;
-                    return nullptr;
-                } else {
-                    graphHash.Update((tokenbuff + secondbuff).c_str(), (tokenbuff + secondbuff).length());
-                    ret->addAttack(tokenbuff, secondbuff);
-                }
-                break;
-        }
-    }
     uint64_t hash1;
     uint64_t hash2;
     graphHash.Final(&hash1, &hash2);

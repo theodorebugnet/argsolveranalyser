@@ -177,32 +177,7 @@ int main(int argc, char** argv) {
 
 
     /******** Construct list of graphs ********/
-    bool useStore = true;
-    std::vector<std::string> tmpGraphFiles;
-    if (!opts["graphs"].empty()) {
-        useStore = false;
-        tmpGraphFiles = opts["graphs"].as<std::vector<std::string>>();
-        for (std::string tmpgf : tmpGraphFiles) {
-            graphFiles.insert(tmpgf);
-        }
-    }
-
-    std::vector<std::string> graphDirs;
-    if (!opts["graph-dirs"].empty()) {
-        useStore = false;
-        graphDirs = opts["graph-dirs"].as<std::vector<std::string>>();
-    }
-    if (useStore || opts["use-store"].as<bool>()) {
-        graphDirs.push_back(opts["store-path"].as<std::string>() + "/graphs/");
-    }
-
-    for (std::string dir : graphDirs) {
-        for (auto& dirent : fs::recursive_directory_iterator(dir, fs::directory_options::follow_directory_symlink)) {
-            if (dirent.is_regular_file()) {
-                graphFiles.insert(dirent.path().string());;
-            }
-        }
-    }
+    graphFiles = get_graphset();
 
     /******** Loop over graphs: parse graph, run metrics, save results ********/
 
@@ -261,7 +236,7 @@ int main(int argc, char** argv) {
             }
 
             if (dry_run) {
-                std::cout << "    (dry run) normally would run metric " << m->name << " here" << std::endl;
+                std::cout << "    (dry run) Would run metric " << m->name << " here" << std::endl;
             } else {
                 try {
                     double score = m->calculate(parsedGraph);
@@ -274,7 +249,7 @@ int main(int argc, char** argv) {
 
         //finally save the output
         if (dry_run) {
-            std::cout << "DRY RUN: Finished processing graph. Would normally write results to " << ofp.string() << "." << std::endl << std::endl;
+            std::cout << "DRY RUN: Finished processing graph. Would write results to " << ofp.string() << "." << std::endl << std::endl;
         } else {
             try {
                 mset.save();
@@ -286,3 +261,4 @@ int main(int argc, char** argv) {
         }
     }
 }
+
