@@ -193,8 +193,7 @@ int main(int argc, char** argv) {
             std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
             continue;
         }
-        const Graph& parsedGraph = *graphPtr;
-        fs::path ofp = outDir / parsedGraph.hash();
+        fs::path ofp = outDir / graphPtr->hash();
 
         std::unique_ptr<MetricSet> mset_ptr;
         try {
@@ -228,13 +227,16 @@ int main(int argc, char** argv) {
                 std::cout << "    (dry run) Would run metric " << m->name << " here" << std::endl;
             } else {
                 try {
-                    double score = m->calculate(parsedGraph);
+                    double score = m->calculate(*graphPtr);
                     mset.setScore(m->name, score);
                 } catch (std::exception& e) {
                     std::cerr << "ERROR: Error calculating metric " << m->name << ": " << e.what() << ". Skipping this metric." << std::endl;
                 }
             }
         }
+
+        //we're done with the graph
+        delete graphPtr;
 
         //finally save the output
         if (dry_run) {

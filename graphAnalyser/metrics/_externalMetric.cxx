@@ -9,6 +9,7 @@ class ExternalMetric : public Metric {
     public:
         ExternalMetric(std::string name, std::string binPath) : Metric(name), binPath(binPath) {
         }
+
         double calculate(const Graph& graph) const {
             std::string arg = graph.fname();
             std::vector<std::string> argv {binPath, arg};

@@ -4,9 +4,6 @@ po::variables_map opts;
 #ifndef STORE_PATH
     #define STORE_PATH "./stoore"
 #endif
-#ifndef CONF_PATH
-    #define CONF_PATH "./coonf"
-#endif
 
 void addGraphFileOpts(po::options_description& desc) {
     desc.add_options()

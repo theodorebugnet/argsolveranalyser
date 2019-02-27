@@ -77,19 +77,19 @@ int main(int argc, char** argv) {
         }
     }
 
-    int maxfnamelen = 0;
+    unsigned long maxfnamelen = 0;
     if (!graphFiles.empty()) {
         for (std::string graphFile : graphFiles) {
             if (graphFile.length() > maxfnamelen) {
                 maxfnamelen = graphFile.length();
             }
             Graph* graphPtr = parseFile(graphFile);
-            const Graph& parsedGraph = *graphPtr;
             if (!graphPtr) {
                 std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
                 continue;
             }
-            graphHashes.insert(std::make_pair<std::string, std::string>(parsedGraph.hash(), std::move(graphFile)));
+            graphHashes.insert(std::make_pair<std::string, std::string>(graphPtr->hash(), std::move(graphFile)));
+            delete graphPtr;
         }
     }
 
