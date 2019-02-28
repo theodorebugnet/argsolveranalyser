@@ -46,20 +46,22 @@ void Graph::printOut() const {
     this->printAttacks();
 }
 
-void Graph::addArgument(Argument* argument) {
-    args.push_back(std::shared_ptr<Argument>(argument));
+void Graph::addArgument(std::shared_ptr<Argument> argument) {
+    args.push_back(argument);
 }
 
 void Graph::addArgument(std::string name, int id) {
     args.push_back(std::shared_ptr<Argument>(new Argument(name, id)));
 }
 
-void Graph::addAttack(Argument* source, Argument* destination) {
-    attacks.push_back(std::make_pair(std::shared_ptr<Argument>(source), std::shared_ptr<Argument>(destination)));
+void Graph::addAttack(std::shared_ptr<Argument> source, std::shared_ptr<Argument> destination) {
+    attacks.push_back(std::make_pair(source, destination));
 }
 
+/* //see header - unusable performance, dubious utility
 void Graph::addAttack(std::string source, std::string destination) {
     auto src = std::find_if(args.begin(), args.end(), [&source](auto ptr) { return *ptr == source; });
     auto dest = std::find_if(args.begin(), args.end(), [&destination](std::shared_ptr<Argument> ptr) { return *ptr == destination; });
     attacks.push_back(std::make_pair(*src, *dest));
 }
+//*/

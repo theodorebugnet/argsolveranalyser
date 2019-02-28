@@ -44,7 +44,7 @@ class Graph {
     public:
         Graph(std::string);
         Graph() {};
-        void addArgument(Argument*);
+        void addArgument(std::shared_ptr<Argument>);
         void addArgument(std::string, int);
         void printArgs() const;
         void printAttacks() const;
@@ -52,8 +52,8 @@ class Graph {
         void setHash(std::string);
         const std::vector<std::shared_ptr<Argument>>& getArgs() const;
         const std::vector<std::pair<std::shared_ptr<Argument>, std::shared_ptr<Argument>>>& getAttacks() const;
-        void addAttack(Argument*, Argument*);
-        void addAttack(std::string, std::string);
+        void addAttack(std::shared_ptr<Argument>, std::shared_ptr<Argument>);
+        //void addAttack(std::string, std::string); //currently has abysmal performance - not exposed pending rewrite, which is deferred since it's not clear this overload is actually useful
         std::string hash() const;
         std::string fname() const;
     private:

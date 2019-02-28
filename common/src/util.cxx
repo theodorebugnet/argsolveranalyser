@@ -58,7 +58,7 @@ std::set<std::string> get_graphset() {
 }
 
 Graph* parseFile(std::string path) {
-    std::set<std::string> args;
+    std::unordered_map<std::string, std::shared_ptr<Argument>> arglookup;
     std::set<std::pair<std::string, std::string>> atts;
     std::ifstream ifile(path);
     std::string tokenbuff, secondbuff;
@@ -70,7 +70,7 @@ Graph* parseFile(std::string path) {
             case arguments:
                 if (tokenbuff == "#") state = attacks;
                 else {
-                    std::pair<std::set<std::string>::iterator, bool> insert = args.insert(tokenbuff);
+                    auto insert = arglookup.insert(std::make_pair<std::string, std::shared_ptr<Argument>>(std::move(tokenbuff), std::make_shared<Argument>(tokenbuff, ctr)));
                     if (!insert.second) {
                         std::cerr << "WARNING: Malformed tgf file: duplicate argument on line " << ctr << ". Ignoring." << std::endl;
                     }
@@ -92,14 +92,14 @@ Graph* parseFile(std::string path) {
     Graph* ret = new Graph(path);
     SpookyHash graphHash;
     graphHash.Init(seed1, seed2);
-    int i = 0;
-    for (std::string arg : args) {
-        graphHash.Update(arg.c_str(), arg.length());
-        ret->addArgument(arg, i++);
+
+    for (auto& arg : arglookup) {
+        graphHash.Update(arg.first.c_str(), arg.first.length());
+        ret->addArgument(arg.second);
     }
     for (std::pair<std::string, std::string> att : atts) {
         graphHash.Update((att.first + att.second).c_str(), (att.first + att.second).length());
-        ret->addAttack(att.first, att.second);
+        ret->addAttack(arglookup[att.first], arglookup[att.second]);
     }
 
     uint64_t hash1;

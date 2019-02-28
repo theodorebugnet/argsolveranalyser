@@ -52,7 +52,9 @@ int main(int argc, char** argv) {
         ("clobber", po::bool_switch(), "When an existing results file is found for a given graph, truncate it before writing the new results.\nThis is useful if some metric has been deprecated and is not used anymore, but still clogs up the results files.")
         ("metric-whitelist,w", po::value<std::vector<std::string>>()->multitoken()->composing(), "A whitelist of metrics to use. Only these will be used to process the graph, all others will be skipped.\n")
         ("metric-blacklist,b", po::value<std::vector<std::string>>()->multitoken()->composing(), "A blacklist of metrics to disable. These metrics will not be ran.\nTakes precedence over the whitelist: a metric present in both options will not be ran.")
-        ("dry-run", po::bool_switch(), "Without doing any actual calculations, print out a list of graphs that would be used, and for every graph, which metrics would be ran.");
+        ("dry-run", po::bool_switch(), "Without doing any actual calculations, print out a list of graphs that would be used, and for every graph, which metrics would be ran.")
+        ("verbose,V", po::bool_switch(), "Provide progress output for each graph and metric (by default, only for each graph is printed")
+        ("quiet,q", po::bool_switch(), "Suppress all progress output, leaving only error and warning messages");
 
     po::options_description cmdOpts;
     cmdOpts.add(cmdOnly).add(allSrcs);
@@ -182,13 +184,20 @@ int main(int argc, char** argv) {
     }
 
     bool forcecalc = opts["force-recalculate"].as<bool>(); //for ease of access
+    bool clobber = opts["clobber"].as<bool>();
+    bool quiet = opts["quiet"].as<bool>();
+    bool verbose = opts["verbose"].as<bool>();
 
     //loop over graphs
     for (std::string graphFile : graphFiles) {
-        if (dry_run) {
-            std::cout << "DRY RUN: Starting run of graph " << graphFile << "." << std::endl;
+        if (!quiet) {
+            std::cout << "Starting to process graph " << graphFile << std::endl;
         }
+
         Graph* graphPtr = parseFile(graphFile);
+        if (verbose) {
+            std::cout << "Successfully loaded graph " << graphFile << std::endl;
+        }
         if (!graphPtr) {
             std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
             continue;
@@ -210,7 +219,7 @@ int main(int argc, char** argv) {
         }
         MetricSet& mset = *mset_ptr;
 
-        if (opts["clobber"].as<bool>()) {
+        if (clobber) {
             mset.clear();
         }
 
@@ -226,6 +235,9 @@ int main(int argc, char** argv) {
             if (dry_run) {
                 std::cout << "    (dry run) Would run metric " << m->name << " here" << std::endl;
             } else {
+                if (verbose) {
+                    std::cout << "    Running metric " << m->name << std::endl;
+                }
                 try {
                     double score = m->calculate(*graphPtr);
                     mset.setScore(m->name, score);
