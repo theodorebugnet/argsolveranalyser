@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     po::options_description cmdOnly("Command-line only options");
     addHelpAndConfOpts(cmdOnly, CONF_PATH);
     cmdOnly.add_options()
-        ("list-metrics,l", "Print a list of available metriccs and exit.");
+        ("list-metrics,l", "Print a list of available metrics and exit.");
 
     //for both cmdline and config file
     po::options_description allSrcs("All configuration");

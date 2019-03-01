@@ -7,7 +7,7 @@ po::variables_map opts;
 
 void addGraphFileOpts(po::options_description& desc) {
     desc.add_options()
-        ("store-path,s", po::value<std::string>()->default_value(STORE_PATH), "Store directory")
+        ("store-path,S", po::value<std::string>()->default_value(STORE_PATH), "Store directory")
         ("graphs,g", po::value<std::vector<std::string>>()->multitoken()->composing(), "A list of loose graph files. Disables the store.")
         ("graph-dirs,d", po::value<std::vector<std::string>>()->multitoken()->composing(), "A list of directories containing graph files. Disables the store.")
         ("use-store", po::bool_switch(), "Use the store's list of graphs despite the --graphs or --graph-dirs options being specified. (The union will be taken.)\nThis does nothing if neither of those options are also specified, as then the store is used by default.");

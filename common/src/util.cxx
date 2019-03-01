@@ -58,7 +58,7 @@ std::set<std::string> get_graphset() {
 }
 
 Graph* parseFile(std::string path) {
-    std::unordered_map<std::string, std::shared_ptr<Argument>> arglookup;
+    std::map<std::string, std::shared_ptr<Argument>> arglookup;
     std::set<std::pair<std::string, std::string>> atts;
     std::ifstream ifile(path);
     std::string tokenbuff, secondbuff;
