@@ -7,40 +7,26 @@
 #include <string>
 #include <memory>
 
-struct Argument {
+struct Argument
+{
     std::string name;
     int id;
     Argument(std::string name, int id) : name(name), id(id) {
     }
 
-    bool operator==(const std::string& other) const {
-        return other == name;
-    }
-    bool operator==(const int& other) const {
-        return other == id;
-    }
-    bool operator==(const Argument& other) const {
-        return other.id == id;
-    }
-    bool operator!=(const Argument& other) const {
-        return !(*this == other);
-    }
+    bool operator==(const std::string& other)   const { return other == name; }
+    bool operator==(const int& other)           const { return other == id; }
+    bool operator==(const Argument& other)      const { return other.id == id; }
+    bool operator!=(const Argument& other)      const { return !(*this == other); }
 
-    bool operator<(const Argument& other) const {
-        return id < other.id;
-    }
-    bool operator>(const Argument& other) const {
-        return other < *this;
-    }
-    bool operator<=(const Argument& other) const {
-        return !(*this > other);
-    }
-    bool operator>=(const Argument& other) const {
-        return !(*this < other);
-    }
+    bool operator<(const Argument& other)       const { return id < other.id; }
+    bool operator>(const Argument& other)       const { return other < *this; }
+    bool operator<=(const Argument& other)      const { return !(*this > other); }
+    bool operator>=(const Argument& other)      const { return !(*this < other); }
 };
 
-class Graph {
+class Graph
+{
     public:
         Graph(std::string);
         Graph() {};

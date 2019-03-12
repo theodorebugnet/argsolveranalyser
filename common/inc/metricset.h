@@ -9,7 +9,8 @@
 namespace fs = std::filesystem;
 
 
-class MetricSet {
+class MetricSet
+{
     public:
         MetricSet(fs::path);
         bool exists(std::string) const;

@@ -19,6 +19,7 @@
 #include "util.h"
 #include "metricset.h"
 #include "_externalMetric.cxx"
+#include "graphhashset.h"
 
 #ifndef CONF_PATH
     #define CONF_PATH "./analyser.coonf"
@@ -31,8 +32,8 @@ std::set<std::string> graphFiles;
 std::vector<std::unique_ptr<Metric>> metrics;
 bool dry_run;
 
-int main(int argc, char** argv) {
-
+int main(int argc, char** argv)
+{
     /******** Preliminary list of metrics ********/
     metrics.push_back(std::make_unique<SizeMetric>());
     metrics.push_back(std::make_unique<SparsenessMetric>());
@@ -60,27 +61,28 @@ int main(int argc, char** argv) {
     cmdOpts.add(cmdOnly).add(allSrcs);
 
     //parse
-    try {
-        po::store(po::command_line_parser(argc, argv).options(cmdOpts).run(), opts);
+    try
+    {   po::store(po::command_line_parser(argc, argv).options(cmdOpts).run(), opts);
         po::notify(opts);
 
-        if (!opts["noconf"].as<bool>()) {
-            std::ifstream confFile(opts["conf"].as<std::string>());
-            if (confFile) {
-                po::store(po::parse_config_file(confFile, allSrcs), opts);
+        if (!opts["noconf"].as<bool>())
+        {   std::ifstream confFile(opts["conf"].as<std::string>());
+            if (confFile)
+            {   po::store(po::parse_config_file(confFile, allSrcs), opts);
                 po::notify(opts);
             }
         }
 
-    } catch (std::exception& e) {
-        std::cerr << e.what() << std::endl;
+    }
+    catch (std::exception& e)
+    {   std::cerr << e.what() << std::endl;
         std::cerr << "Terminating." << std::endl;
         return 1;
     }
 
     /******** Handle parsed options ********/
-    if (opts.count("help")) {
-        std::cout << "Usage: graph_analyser [options]" << std::endl;
+    if (opts.count("help"))
+    {   std::cout << "Usage: graph_analyser [options]" << std::endl;
         std::cout << "Command line options generally override config file options, except when they specify lists." << std::endl;
         std::cout << "List arguments get merged from both sources." << std::endl;
         std::cout << std::endl << "EXAMPLE: graph_analyser -g ~/my-graphs/a.tgf ~/my-graphs/b.tgf -d ~/my-graph-folder -b slow-metric useless-metric --use-store" << std::endl;
@@ -92,30 +94,30 @@ int main(int argc, char** argv) {
         return 0;
     }
     //list-metrics handled below, after external metrics have been loaded
-    if (opts["dry-run"].as<bool>()) {
-        dry_run = true;
+    if (opts["dry-run"].as<bool>())
+    {   dry_run = true;
     }
 
     /******** Construct external metrics ********/
     fs::perms any_exec = fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec;
     fs::path extmetricp(opts["store-path"].as<std::string>() + "/external-metrics");
-    if (fs::is_directory(extmetricp)) {
-        for (auto& dirent : fs::directory_iterator(extmetricp)){ //subdirectories are not traversed
-            if (!dirent.is_regular_file()) {
-                continue;
+    if (fs::is_directory(extmetricp))
+    {   for (auto& dirent : fs::directory_iterator(extmetricp)) //subdirectories are not traversed
+        {   if (!dirent.is_regular_file())
+            {   continue;
             }
             fs::perms permissions = dirent.status().permissions();
-            if ((permissions & any_exec) != fs::perms::none) { //is executable
-                fs::path path = dirent.path();
+            if ((permissions & any_exec) != fs::perms::none) //is executable
+            {   fs::path path = dirent.path();
                 metrics.push_back(std::make_unique<ExternalMetric>(path.stem(), path.string())); //metric name is just filename w/o extension
             }
         }
     }
 
     //handle last "print and exit" type option, now that we have the required list
-    if (opts.count("list-metrics")) {
-        for (const std::unique_ptr<Metric>& m : metrics) {
-            std::cout << m->name << std::endl;
+    if (opts.count("list-metrics"))
+    {   for (const std::unique_ptr<Metric>& m : metrics)
+        {   std::cout << m->name << std::endl;
         }
         return 0;
     }
@@ -125,44 +127,46 @@ int main(int argc, char** argv) {
     bool has_wl = false;
     bool has_bl = false;
     std::unordered_set<std::string> blacklist;
-    if (!opts["metric-whitelist"].empty()) {
-        std::vector<std::string> tmp = opts["metric-whitelist"].as<std::vector<std::string>>();
+    if (!opts["metric-whitelist"].empty())
+    {   std::vector<std::string> tmp = opts["metric-whitelist"].as<std::vector<std::string>>();
         whitelist.insert(tmp.begin(), tmp.end());
         has_wl = true;
     }
-    if (!opts["metric-blacklist"].empty()) {
-        std::vector<std::string> tmp = opts["metric-blacklist"].as<std::vector<std::string>>();
+    if (!opts["metric-blacklist"].empty())
+    {   std::vector<std::string> tmp = opts["metric-blacklist"].as<std::vector<std::string>>();
         blacklist.insert(tmp.begin(), tmp.end());
         has_bl = true;
     }
 
-    if (has_bl) {
-        for (std::vector<std::unique_ptr<Metric>>::iterator it = metrics.begin(); it != metrics.end();) {
-            if (blacklist.erase((*it)->name) == 1) { //if it's in the blacklist - and incidentally remove it from blacklist now that it's handled
-                it = metrics.erase(it); //erase
-            } else {
-                ++it; //else carry on
+    if (has_bl)
+    {   for (std::vector<std::unique_ptr<Metric>>::iterator it = metrics.begin(); it != metrics.end();)
+        {   if (blacklist.erase((*it)->name) == 1) //if it's in the blacklist - and incidentally remove it from blacklist now that it's handled
+            {   it = metrics.erase(it); //erase
+            }
+            else
+            {   ++it; //else carry on
             }
         }
 
         //if anything remains, it didn't correspond to any metric, so print warning to user
-        for (std::string unused_bl : blacklist) {
-            std::cout << "INFO: " << unused_bl << " is not an available metric, and therefore cannot be blacklisted." << std::endl;
+        for (std::string unused_bl : blacklist)
+        {   std::cout << "INFO: " << unused_bl << " is not an available metric, and therefore cannot be blacklisted." << std::endl;
         }
     }
 
-    if (has_wl) {
-        for (std::vector<std::unique_ptr<Metric>>::iterator it = metrics.begin(); it != metrics.end();) {
-            if (whitelist.erase((*it)->name) == 1) { //as before, if it's in whitelist, and btw remove from whitelist
-                ++it; //carry on
-            } else {
-                it = metrics.erase(it); //else, it's not in whitelist, so erase
+    if (has_wl)
+    {   for (std::vector<std::unique_ptr<Metric>>::iterator it = metrics.begin(); it != metrics.end();)
+        {   if (whitelist.erase((*it)->name) == 1) //as before, if it's in whitelist, and btw remove from whitelist
+            {   ++it; //carry on
+            }
+            else
+            {   it = metrics.erase(it); //else, it's not in whitelist, so erase
             }
         }
 
         //if anything remains, it didn't correspond to any metric, so print warning to user
-        for (std::string unused_wl : whitelist) {
-            std::cout << "INFO: " << unused_wl << " is not an available metric, and therefore cannot be whitelisted." << std::endl;
+        for (std::string unused_wl : whitelist)
+        {   std::cout << "INFO: " << unused_wl << " is not an available metric, and therefore cannot be whitelisted." << std::endl;
         }
     }
 
@@ -174,94 +178,132 @@ int main(int argc, char** argv) {
 
     //Ensure output directory is good
     fs::path outDir(opts["store-path"].as<std::string>() + "/graph-scores/");
-    if (fs::exists(outDir)) {
-        if (!fs::is_directory(outDir)) {
-            std::cerr << "Malformed store: entry \"/graph-scores/\" is not a directory" << std::endl;
+    if (fs::exists(outDir))
+    {   if (!fs::is_directory(outDir))
+        {   std::cerr << "Malformed store: entry \"/graph-scores/\" is not a directory" << std::endl;
             return 1;
         }
-    } else {
-        fs::create_directory(outDir);
+    }
+    else
+    {   fs::create_directory(outDir);
     }
 
     bool forcecalc = opts["force-recalculate"].as<bool>(); //for ease of access
     bool clobber = opts["clobber"].as<bool>();
     bool quiet = opts["quiet"].as<bool>();
     bool verbose = opts["verbose"].as<bool>();
+    bool useHashCache = opts["use-hash-cache"].as<bool>();
+
+    GraphHashSet ghset;
 
     //loop over graphs
-    for (std::string graphFile : graphFiles) {
+    for (std::string graphFile : graphFiles)
+    {   std::string currentHash;
+        Graph *graphPtr = nullptr;
+
         if (!quiet) {
             std::cout << "Starting to process graph " << graphFile << std::endl;
         }
 
-        Graph* graphPtr = parseFile(graphFile);
-        if (verbose) {
-            std::cout << "Successfully loaded graph " << graphFile << std::endl;
+        if (useHashCache && ghset.exists(graphFile))
+        {   currentHash = ghset.getHash(graphFile);
         }
-        if (!graphPtr) {
-            std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
-            continue;
+        else
+        {   Graph* graphPtr = parseFile(graphFile);
+            if (!graphPtr)
+            {   std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
+                continue;
+            }
+
+            currentHash = graphPtr->hash();
+            if (verbose)
+            {   std::cout << "Successfully loaded graph " << graphFile << std::endl;
+            }
+            ghset.setHash(graphFile, currentHash);
         }
-        fs::path ofp = outDir / graphPtr->hash();
+
+        fs::path ofp = outDir / currentHash;
 
         std::unique_ptr<MetricSet> mset_ptr;
-        try {
-            mset_ptr = std::make_unique<MetricSet>(ofp);
-        } catch (std::exception& e) {
-            std::cerr << "ERROR: Unable to load file of existing results: " << ofp.string() << " for graph: " << graphFile
+        try
+        {   mset_ptr = std::make_unique<MetricSet>(ofp);
+        }
+        catch (std::exception& e)
+        {   std::cerr << "ERROR: Unable to load file of existing results: " << ofp.string() << " for graph: " << graphFile
                 << ". Skipping graph; please check permissions, or delete the file if you do not wish to keep the existing results, then re-run the "
                 << "analyser for this graph using the -g option." << std::endl;
             continue;
         }
-        if (!mset_ptr) {
-            std::cerr << "DEBUG: This should never show up. mset_ptr is null despite having been constructed. Skipping graphs " << graphFile << std::endl;
+        if (!mset_ptr)
+        {   std::cerr << "DEBUG: This should never show up. mset_ptr is null despite having been constructed. Skipping graphs " << graphFile << std::endl;
             continue;
         }
         MetricSet& mset = *mset_ptr;
 
-        if (clobber) {
-            mset.clear();
+        if (clobber)
+        {   mset.clear();
         }
 
         //actually do the calculations for every metric
-        for (const auto& m : metrics) {
-            if (mset.exists(m->name) && !forcecalc) { //skip if already calculated
-                if (dry_run) {
-                    std::cout << "    (dry run) skipping metric " << m->name << " as it already exists and -f wasn't set" << std::endl;
+        for (const auto& m : metrics)
+        {   if (mset.exists(m->name) && !forcecalc) //skip if already calculated
+            {   if (dry_run)
+                {   std::cout << "    (dry run) skipping metric " << m->name << " as it already exists and -f wasn't set" << std::endl;
                 }
                 continue;
             }
 
-            if (dry_run) {
-                std::cout << "    (dry run) Would run metric " << m->name << " here" << std::endl;
-            } else {
-                if (verbose) {
-                    std::cout << "    Running metric " << m->name << std::endl;
+            if (dry_run)
+            {   std::cout << "    (dry run) Would run metric " << m->name << " here" << std::endl;
+                if (!graphPtr)
+                {   std::cout << "    (dry run) Would lazy load graph here" << std::endl;
                 }
-                try {
-                    double score = m->calculate(*graphPtr);
+            }
+            else
+            {   if (!graphPtr)
+                {   if (verbose)
+                    {   std::cout << "    Lazy loading graph..." << std::endl;
+                    }
+                    graphPtr = parseFile(graphFile);
+                    if (!graphPtr) {
+                        std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
+                        break; //break out of the metric looping, since we can't load the graph
+                    }
+                }
+                if (verbose)
+                {   std::cout << "    Running metric " << m->name << std::endl;
+                }
+                try
+                {   double score = m->calculate(*graphPtr);
                     mset.setScore(m->name, score);
-                } catch (std::exception& e) {
-                    std::cerr << "ERROR: Error calculating metric " << m->name << ": " << e.what() << ". Skipping this metric." << std::endl;
+                }
+                catch (std::exception& e)
+                {   std::cerr << "ERROR: Error calculating metric " << m->name << ": " << e.what() << ". Skipping this metric." << std::endl;
                 }
             }
         }
 
         //we're done with the graph
+        //also the breakout point if lazy loading a graph fails
         delete graphPtr;
 
         //finally save the output
-        if (dry_run) {
-            std::cout << "DRY RUN: Finished processing graph. Would write results to " << ofp.string() << "." << std::endl << std::endl;
-        } else {
-            try {
-                mset.save();
-            } catch (std::exception& e) {
-                std::cerr << "ERROR: Failure trying to write output file " << ofp.string() << " for graph " << graphFile << ". Exception message:" << std::endl;
+        if (dry_run)
+        {   std::cout << "DRY RUN: Finished processing graph. Would write results to " << ofp.string() << "." << std::endl << std::endl;
+        }
+        else
+        {   try
+            {   mset.save();
+            }
+            catch (std::exception& e)
+            {   std::cerr << "ERROR: Failure trying to write output file " << ofp.string() << " for graph " << graphFile << ". Exception message:" << std::endl;
                 std::cerr << e.what() << std::endl;
                 std::cerr << "Skipping graph!" << std::endl;
             }
         }
     }
+
+    /******** Finally save the hash cache ********/
+    ghset.save();
 }
 

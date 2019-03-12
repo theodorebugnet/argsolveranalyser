@@ -7,7 +7,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.69.0 REQUIRED COMPONENTS program_options) 
 
 SET(CMAKE_CXX_FLAGS "-Wall -Wextra")
-SET(CMAKE_CXX_FLAGS_DEBUG "-g -pg")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g")# -pg")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 SET(STORE_PATH "./store/")
