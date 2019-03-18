@@ -15,6 +15,13 @@ void addGraphFileOpts(po::options_description& desc)
         ("use-hash-cache,H", po::bool_switch(), "Use the cached hash map of graphs instead of recalculating the hash for every input file. This means that if one of the files was modified since the hash was last calculated, various results could end up wrong.");
 }
 
+void addQuietVerboseOpts(po::options_description& desc)
+{
+    desc.add_options()
+        ("verbose,V", po::bool_switch(), "Provide progress output for each graph and metric (by default, only for each graph is printed")
+        ("quiet,q", po::bool_switch(), "Suppress all progress output, leaving only error and warning messages");
+}
+
 void addHelpAndConfOpts(po::options_description& desc, std::string default_conf_path)
 {
     desc.add_options()

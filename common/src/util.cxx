@@ -6,6 +6,7 @@
 #include <set>
 #include <algorithm>
 #include <filesystem>
+#include <random>
 #include "graph.h"
 #include "util.h"
 #include "SpookyV2.h"
@@ -114,3 +115,55 @@ Graph* parseFile(std::string path)
     return ret;
 }
 
+std::string getAdditionalArg(std::string graphFile, std::string arg)
+{
+    std::string additionalArr;
+    unsigned long argpos = 0;
+    try
+    {   argpos = std::stol(arg);
+    }
+    catch (std::exception& e)
+    { }
+
+    std::ifstream gin(graphFile);
+    std::string argbuff, prevbuff;
+
+    if (argpos > 0) //save some space - no need to keep vector of args
+    {   for (unsigned long ctr = 0; std::getline(gin, argbuff); ctr++)
+        {   if (argbuff == "#")
+            {   additionalArr = prevbuff;
+                break;
+            }
+            else if (ctr == argpos)
+            {   additionalArr = argbuff;
+                break;
+            }
+        }
+    }
+    else
+    {   std::vector<std::string> allArgsBuff;
+        while (std::getline(gin, argbuff))
+        {   if (argbuff == "#") //select a random argument
+            {   std::mt19937 rn;
+                try
+                {   std::random_device rd;
+                    rn.seed(rd());
+                }
+                catch(...)
+                { }
+                std::uniform_int_distribution<int> distrib(0, allArgsBuff.size() - 1);
+                additionalArr = allArgsBuff[distrib(rn)];
+                break;
+            }
+            else if (arg != "" && arg == argbuff) //we found the required argument
+            {   additionalArr = argbuff;
+                break;
+            }
+            else //add as candidate for random selection later
+            {   allArgsBuff.push_back(argbuff);
+            }
+        }
+    }
+
+    return additionalArr;
+}

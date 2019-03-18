@@ -53,9 +53,8 @@ int main(int argc, char** argv)
         ("clobber", po::bool_switch(), "When an existing results file is found for a given graph, truncate it before writing the new results.\nThis is useful if some metric has been deprecated and is not used anymore, but still clogs up the results files.")
         ("metric-whitelist,w", po::value<std::vector<std::string>>()->multitoken()->composing(), "A whitelist of metrics to use. Only these will be used to process the graph, all others will be skipped.\n")
         ("metric-blacklist,b", po::value<std::vector<std::string>>()->multitoken()->composing(), "A blacklist of metrics to disable. These metrics will not be ran.\nTakes precedence over the whitelist: a metric present in both options will not be ran.")
-        ("dry-run", po::bool_switch(), "Without doing any actual calculations, print out a list of graphs that would be used, and for every graph, which metrics would be ran.")
-        ("verbose,V", po::bool_switch(), "Provide progress output for each graph and metric (by default, only for each graph is printed")
-        ("quiet,q", po::bool_switch(), "Suppress all progress output, leaving only error and warning messages");
+        ("dry-run", po::bool_switch(), "Without doing any actual calculations, print out a list of graphs that would be used, and for every graph, which metrics would be ran.");
+    addQuietVerboseOpts(allSrcs);
 
     po::options_description cmdOpts;
     cmdOpts.add(cmdOnly).add(allSrcs);
@@ -199,7 +198,7 @@ int main(int argc, char** argv)
     //loop over graphs
     for (std::string graphFile : graphFiles)
     {   std::string currentHash;
-        Graph *graphPtr = nullptr;
+        std::unique_ptr<Graph> graphPtr;
 
         if (!quiet) {
             std::cout << "Starting to process graph " << graphFile << std::endl;
@@ -209,7 +208,7 @@ int main(int argc, char** argv)
         {   currentHash = ghset.getHash(graphFile);
         }
         else
-        {   Graph* graphPtr = parseFile(graphFile);
+        {   graphPtr = std::unique_ptr<Graph>(parseFile(graphFile));
             if (!graphPtr)
             {   std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
                 continue;
@@ -264,7 +263,7 @@ int main(int argc, char** argv)
                 {   if (verbose)
                     {   std::cout << "    Lazy loading graph..." << std::endl;
                     }
-                    graphPtr = parseFile(graphFile);
+                    graphPtr = std::unique_ptr<Graph>(parseFile(graphFile));
                     if (!graphPtr) {
                         std::cerr << "ERROR: Error parsing graph file: " << graphFile <<". Skipping." << std::endl;
                         break; //break out of the metric looping, since we can't load the graph
@@ -285,7 +284,7 @@ int main(int argc, char** argv)
 
         //we're done with the graph
         //also the breakout point if lazy loading a graph fails
-        delete graphPtr;
+        //delete graphPtr;
 
         //finally save the output
         if (dry_run)
