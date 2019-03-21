@@ -12,6 +12,9 @@
 #include <iomanip>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <cstdio>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "util.h"
 #include "graph.h"
 #include "opts.h"
@@ -89,10 +92,12 @@ int main(int argc, char** argv)
         std::cout << cmdOpts << std::endl;
         return 0;
     }
+
     if (opts["problems"].empty())
     {   std::cout << "ERROR: No problems specified. Benchmark cannot be run. Terminating." << std::endl;
         return 1;
     }
+
     std::string storeDir;
     if (opts["store-path"].empty())
     {   std::cout << "ERROR: No store path specified; default path was unset. Please specify a store directory where benchmark results will be saved. Terminating." << std::endl;
@@ -118,6 +123,7 @@ int main(int argc, char** argv)
     bool recover = opts["recover"].as<bool>();
 
     std::vector<std::string> problems = opts["problems"].as<std::vector<std::string>>();
+
     int timeLimit = -1;
     if (!opts["time-limit"].empty())
     {   timeLimit = opts["time-limit"].as<int>();
@@ -131,8 +137,18 @@ int main(int argc, char** argv)
     if (!opts["solver-executable"].empty())
     {   solverpath = opts["solver-executable"].as<std::string>();
     }
-    if (solverpath == "" && !quiet)
-    {   std::cout << "INFO: No solver binary specified. No benchmarks will be ran." << std::endl;
+    std::string referenceSolverpath;
+    if (!opts["reference-solver"].empty())
+    {   referenceSolverpath = opts["reference-solver"].as<std::string>();
+    }
+    if (solverpath == "" && referenceSolverpath == "")
+    {   std::cout << "INFO: No solvers were specified. Terminating." << std::endl;
+    }
+    else if (solverpath == "" && !quiet)
+    {   std::cout << "INFO: No solver binary specified. No benchmarks will be ran; the reference solver will be used to generate any solutions that don't already exist." << std::endl;
+    }
+    else if (referenceSolverpath == "" && verbose)
+    {   std::cout << "INFO: No reference solver specified; benchmarks will only be ran against graph+problem combinations for which a reference solution has previously been generated." << std::endl;
     }
 
     /******** Loop over graphs ********/
@@ -173,9 +189,11 @@ int main(int argc, char** argv)
         fs::path soldir(storeDir + "/bench-solutions/" + currHash);
         try
         {   fs::create_directories(outdir);
+            fs::create_directories(soldir);
         }
         catch (fs::filesystem_error& e)
-        {   std::cerr << "ERROR: Unable to create output directory to store results: " << outdir.string() << ": " << e.what() << ". Skipping graph." << std::endl;
+        {   std::cerr << "ERROR: Unable to create output directory to store results and/or solutions: "
+                << outdir.string() << " or " << soldir.string() << ": " << e.what() << ". Skipping graph." << std::endl;
             continue;
         }
 
@@ -216,8 +234,63 @@ int main(int argc, char** argv)
             }
 
             //check reference solution exists here else act accordingly
-            if (!fs::exists(soldir / fullproblem))
-            {   std::cout << "No solution!" << std::endl;
+            fs::path solfp = (soldir / (problem + ":" + additionalArg));
+            if (!fs::exists(solfp))
+            {
+                if (referenceSolverpath == "")
+                {   if (!quiet)
+                    {   std::cout << "No reference solver specified and no solution for graph " << graphFile
+                            << " and problem " << fullproblem << "; skipping." << std::endl;
+                        continue;
+                    }
+                }
+                else
+                {   if (verbose)
+                    {   std::cout << "    No solution exists; running reference solver..." << std::endl;
+                    }
+
+                    //setup output
+                    std::cout << "Trying to create " << solfp.string() << std::endl;
+                    int outfd = creat(solfp.c_str(), 0644);
+                    if (outfd < 0)
+                    {   std::cerr << "ERROR: Unable to open solution output file for writing. Skipping this problem." << std::endl;
+                        perror(NULL);
+                        continue;
+                    }
+
+                    int pid = fork();
+                    if (pid < 0) //error
+                    {   std::cerr << "ERROR: Failed forking to invoke reference solver on graph " << graphFile
+                            << " and problem " << fullproblem << "; skipping." << std::endl;
+                        continue;
+                    }
+                    else if (pid > 0) //parent
+                    {   wait(NULL);
+                    }
+                    else //child
+                    {   if (dup2(outfd, STDOUT_FILENO) < 0)
+                        {   std::cerr << "ERROR: Unable to redirect reference solver to solution file. Skipping this." << std::endl;
+                            _exit(1);
+                        }
+                        std::vector<std::string> argvct { referenceSolverpath,
+                                "-f", graphFile,
+                                "-fo", "tgf",
+                                "-p", problem
+                            };
+                        if (additionalArg != "")
+                        {   argvct.insert(argvct.end(), { "-a", additionalArg});
+                        }
+
+                        const char** args = new const char* [argvct.size()];
+                        for (size_t i = 0; i < argvct.size(); i++)
+                        {   args[i] = argvct[i].c_str();
+                        }
+                        args[argvct.size()] = NULL;
+
+                        execv(referenceSolverpath.c_str(), (char**)args);
+                        std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+                    }
+                }
             }
 
             //Now we can invoke runsolver! Provided we have a solver argument, fork, build the command line, and execve.
@@ -269,11 +342,6 @@ int main(int argc, char** argv)
                 {   args[i] = argvct[i].c_str();
                 }
                 args[argvct.size()] = NULL;
-
-                //std::cout << argvct.size() + 1 << std::endl;
-                //for (size_t i = 0; i <= argvct.size() + 2; i++)
-                //{   std::cout << "args[" << i << "]: " << args[i] << std::endl;
-                //}
 
                 execv(runsolver, (char**)args);
                 std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
