@@ -8,7 +8,6 @@
 
 namespace fs = std::filesystem;
 
-
 class GraphHashSet
 {
     public:

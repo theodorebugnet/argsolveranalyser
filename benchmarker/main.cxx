@@ -16,6 +16,7 @@
 #include "graph.h"
 #include "opts.h"
 #include "graphhashset.h"
+#include "persistentargs.h"
 
 #ifndef CONF_PATH
     #define CONF_PATH "./mapper.coonf"
@@ -114,6 +115,8 @@ int main(int argc, char** argv)
     bool quiet = opts["quiet"].as<bool>();
     bool verbose = opts["verbose"].as<bool>();
     bool useHashCache = opts["use-hash-cache"].as<bool>();
+    bool recover = opts["recover"].as<bool>();
+
     std::vector<std::string> problems = opts["problems"].as<std::vector<std::string>>();
     int timeLimit = -1;
     if (!opts["time-limit"].empty())
@@ -135,6 +138,7 @@ int main(int argc, char** argv)
     /******** Loop over graphs ********/
     std::set<std::string> graphFiles = get_graphset();
     GraphHashSet ghset;
+    PersistentArgs argCache;
     //For each graph, parse it to get the hash, then loop over problems
         //For each problem:
             //If "recover" flag was set, check if there's already a result with this run ID; if there is, continue; if not, or recover isn't set:
@@ -166,6 +170,7 @@ int main(int argc, char** argv)
 
         //create output directory if necessary
         fs::path outdir(storeDir + "/benchmarks/" + runId + "/" + currHash);
+        fs::path soldir(storeDir + "/bench-solutions/" + currHash);
         try
         {   fs::create_directories(outdir);
         }
@@ -175,12 +180,47 @@ int main(int argc, char** argv)
         }
 
         //Now we can start looping over the problems
-        for (std::string problem : problems)
-        {   //TODO: check for -R here
+        for (std::string fullproblem : problems)
+        {   fs::path outfp = outdir / (fullproblem + ".output");
+            fs::path resfp = outdir / (fullproblem + ".stat");
 
-            //TODO: check reference solution exists here else act accordingly
+            //If recovery flag has been set, skip anything that already has a solution
+            if (recover)
+            {   if (fs::exists(outfp) && fs::exists(resfp))
+                {   if (verbose)
+                    {   std::cout << "        Recovery mode is on and problem solution already exists." << std::endl;
+                    }
+                    continue;
+                }
+            }
 
-            //invoke runsolver here
+            //check if problem has additional argument
+            std::string problem = fullproblem;
+            std::string additionalArg;
+            size_t colonpos = fullproblem.find(":");
+            if (colonpos != std::string::npos)
+            {   problem = fullproblem.substr(0, colonpos);
+                std::string arg = fullproblem.substr(colonpos + 1, fullproblem.size());
+                if (arg == "" && argCache.exists(currHash, problem))
+                {   additionalArg = argCache.getArg(currHash, problem);
+                    if (verbose)
+                    {   std::cout << "    Arg cache for problem: " << additionalArg << std::endl;
+                    }
+                }
+                else
+                {   additionalArg = getAdditionalArg(graphFile, arg);
+                }
+                if (arg == "" || arg == "-")
+                {   argCache.setArg(currHash, problem, additionalArg);
+                }
+            }
+
+            //check reference solution exists here else act accordingly
+            if (!fs::exists(soldir / fullproblem))
+            {   std::cout << "No solution!" << std::endl;
+            }
+
+            //Now we can invoke runsolver! Provided we have a solver argument, fork, build the command line, and execve.
             if (solverpath == "")
             {   continue;
             }
@@ -190,30 +230,58 @@ int main(int argc, char** argv)
             }
 
             int pid = fork();
-            if (pid < 0)
-            {   std::cerr << "ERROR: Failed fork for invoking solver. Skipping graph " << graphFile << " and problem " << problem << "." << std::endl;
+            if (pid < 0) //error
+            {   std::cerr << "ERROR: Failed fork for invoking solver. Skipping graph " << graphFile << " and problem " << fullproblem << "." << std::endl;
                 continue;
             }
-            else if (pid > 0)
+            else if (pid > 0) //parent
             {   wait(NULL);
             }
-            else
+            else //child
             {   const char* runsolver = "./runsolver";
-                fs::path outfp = outdir / (problem + ".output");
-                fs::path resfp = outdir / (problem + ".stat");
-                const char* args[] = {
-                    runsolver,
-                    "-w", "/dev/null/",
-                    "-v", resfp.c_str(),
-                    "-o", outfp.c_str(),
-                    solverpath.c_str(),
+                std::vector<std::string> argvct { runsolver,
+                    "-w", "/dev/null",
+                    "-v", resfp.string(),
+                    "-o", outfp.string()
                 };
+
+                if (timeLimit > 0)
+                {   argvct.push_back("-C");
+                    argvct.push_back(std::to_string(timeLimit));
+                }
+                if (memLimit > 0)
+                {
+                    argvct.push_back("-M");
+                    argvct.push_back(std::to_string(memLimit));
+                }
+
+                argvct.insert(argvct.end(), { solverpath,
+                        "-f", graphFile,
+                        "-fo", "tgf",
+                        "-p", problem
+                    });
+                if (additionalArg != "")
+                {   argvct.insert(argvct.end(), { "-a", additionalArg});
+                }
+
+                const char** args = new const char* [argvct.size()];
+                for (size_t i = 0; i < argvct.size(); i++)
+                {   args[i] = argvct[i].c_str();
+                }
+                args[argvct.size()] = NULL;
+
+                //std::cout << argvct.size() + 1 << std::endl;
+                //for (size_t i = 0; i <= argvct.size() + 2; i++)
+                //{   std::cout << "args[" << i << "]: " << args[i] << std::endl;
+                //}
+
                 execv(runsolver, (char**)args);
+                std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
             }
         }
         std::cout << "    Done" << std::endl;
     }
-
+    argCache.save();
     ghset.save();
 }
 

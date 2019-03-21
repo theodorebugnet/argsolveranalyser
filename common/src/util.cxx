@@ -118,28 +118,31 @@ Graph* parseFile(std::string path)
 std::string getAdditionalArg(std::string graphFile, std::string arg)
 {
     std::string additionalArr;
-    unsigned long argpos = 0;
-    try
-    {   argpos = std::stol(arg);
-    }
-    catch (std::exception& e)
-    { }
-
     std::ifstream gin(graphFile);
     std::string argbuff, prevbuff;
 
-    if (argpos > 0) //save some space - no need to keep vector of args
-    {   for (unsigned long ctr = 0; std::getline(gin, argbuff); ctr++)
-        {   if (argbuff == "#")
-            {   additionalArr = prevbuff;
-                break;
+    if (arg != "" && arg != "-")
+    {   unsigned long argpos = 0;
+        try
+        {   argpos = std::stol(arg);
+            for (unsigned long ctr = 0; std::getline(gin, argbuff); ctr++)
+            {   if (argbuff == "#")
+                {   additionalArr = prevbuff;
+                    break;
+                }
+                else if (ctr == argpos)
+                {   additionalArr = argbuff;
+                    break;
+                }
             }
-            else if (ctr == argpos)
-            {   additionalArr = argbuff;
-                break;
-            }
+            return additionalArr;
+        }
+        catch (std::exception& e)
+        {   return arg;
         }
     }
+
+    //else
     else
     {   std::vector<std::string> allArgsBuff;
         while (std::getline(gin, argbuff))
