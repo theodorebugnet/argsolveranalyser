@@ -13,7 +13,7 @@ cmp: compare-exts.o Timer.o
 	g++ -o ~/bin/compare-exts compare-exts.o Timer.o $(CPPFLAGS) 
 
 mpz: compare-exts-mpz.o Timer.o
-	g++ -o compare-solutions compare-exts-mpz.o Timer.o $(CPPFLAGS) 
+	g++ -o compare-extensions compare-exts-mpz.o Timer.o $(CPPFLAGS) 
 
 compare-exts-mpz.o: compare-exts-mpz.cpp
 	g++ -c compare-exts-mpz.cpp -o compare-exts-mpz.o $(CPPFLAGS) 
