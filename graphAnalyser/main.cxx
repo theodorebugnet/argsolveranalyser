@@ -43,17 +43,17 @@ int main(int argc, char** argv)
     po::options_description cmdOnly("Command-line only options");
     addHelpAndConfOpts(cmdOnly, CONF_PATH);
     cmdOnly.add_options()
-        ("list-metrics,l", "Print a list of available metrics and exit.");
+        ("list-metrics,l", "Print a list of available metrics and exit.\n");
 
     //for both cmdline and config file
     po::options_description allSrcs("All configuration");
     addGraphFileOpts(allSrcs);
     allSrcs.add_options()
-        ("force-recalculate,f", po::bool_switch(), "When an existing results file is found, do not trust the existing results and recalculate all metrics, overwriting any conflicting values.")
-        ("clobber", po::bool_switch(), "When an existing results file is found for a given graph, truncate it before writing the new results.\nThis is useful if some metric has been deprecated and is not used anymore, but still clogs up the results files.")
+        ("force-recalculate,f", po::bool_switch(), "When an existing results file is found, do not trust the existing results and recalculate all metrics, overwriting any conflicting values.\n")
+        ("clobber,C", po::bool_switch(), "When an existing results file is found for a given graph, truncate it before writing the new results.\nThis is useful if some metric has been deprecated and is not used anymore, but still clogs up the results files.\n")
         ("metric-whitelist,w", po::value<std::vector<std::string>>()->multitoken()->composing(), "A whitelist of metrics to use. Only these will be used to process the graph, all others will be skipped.\n")
-        ("metric-blacklist,b", po::value<std::vector<std::string>>()->multitoken()->composing(), "A blacklist of metrics to disable. These metrics will not be ran.\nTakes precedence over the whitelist: a metric present in both options will not be ran.")
-        ("dry-run", po::bool_switch(), "Without doing any actual calculations, print out a list of graphs that would be used, and for every graph, which metrics would be ran.");
+        ("metric-blacklist,b", po::value<std::vector<std::string>>()->multitoken()->composing(), "A blacklist of metrics to disable. These metrics will not be ran.\nTakes precedence over the whitelist: a metric present in both options will not be ran.\n")
+        ("dry-run", po::bool_switch(), "Without doing any actual calculations, print out a list of graphs that would be used, and for every graph, which metrics would be ran.\n");
     addQuietVerboseOpts(allSrcs);
 
     po::options_description cmdOpts;

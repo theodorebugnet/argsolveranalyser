@@ -5,3 +5,7 @@ include_directories(${SHARED_LIB_INCLUDE_DIR})
 add_executable(benchmarker main.cxx date.h)
 target_link_libraries(benchmarker stdc++fs)
 target_link_libraries(benchmarker common)
+set_target_properties(benchmarker PROPERTIES
+    COTIRE_ADD_UNITY_BUILD FALSE
+    COTIRE_PREFIX_HEADER_IGNORE_PATH "")
+cotire(benchmarker)
