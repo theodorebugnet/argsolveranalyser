@@ -128,14 +128,15 @@ int main(int argc, char** argv)
         std::cout << "The probo specification is used to invoke solvers; in brief, that means the solver is called as follows:\n"
             << "    SOLVER_NAME -f <filename of graph> -fo tgf -p <problem> [-a <argument name>]\n"
             << "For decision problems which require an argument name, specify the problem with a colon and, optionally, an argument identifier. If the identifier is avalid integer number, it is treated as a position number (in the tgf file); otherwise, it is treated as an argument name.\n"
-            << " - If nothing follows the colon, a random argument will be used.\n"
+            << " - If a dash '-' follows the colon, a random argument will be used.\n"
+            << " - If nothing follows the colon, a random argument will be used IF a random argument has not previously been selected for this graph, otherwise that cached argument will be used rather than selecting a new random one.\n"
             << " - If a non-numeric name follows the colon, but a graph doesn't have a matching argument, a random argument will be used for that graph.\n"
-            << " - If a number is used as identifier but a graph has less argument than that, the last argument will be used for that graph.\n"
+            << " - If a number is used as identifier but a graph has less arguments than that, the last argument will be used for that graph.\n"
             << "For instance, using probo problem names:\n"
             << "    \"--problems DC-PR:1\" will invoke solvers to decide, credulously, the acceptance of the first argument (as found in the tfg file), under preferred semantics.\n"
             << "    \"--problems DC-PR:1 DC-PR:5 DC-PR:2 DS-GR:10\" will, for every graph, invoke solvers to solve credulous acceptance for the first, fifth, and second arguments as found in the tgf file, under preferred semantic, and also the skeptical acceptance of the tenth argument under grounded semantics - but if any graph has less than 10 arguments, skeptical acceptance under grounded semantics will instead be tested on the last argument specified in the tgf file.\n"
             << "    \"--problems DC-PR:a5\" will invoke DC-PR with the argument that has id \"a5\" for any graph that has an argument with this ID defined, and use a random argument for any graphs which do not have an argument called \"a5\".\n"
-            << "Note that the colon is the only thing controlling the precense of the \"-a <argument>\" parameter in the solver invocation; the actual format used to represent the problems is not restricted, and so \"DC\" and \"DS\" are not treated as special cases.\n" << std::endl;
+            << "Note that the colon is the only thing controlling the presense of the \"-a <argument>\" parameter in the solver invocation; the actual format used to represent the problems is not restricted, and so \"DC\" and \"DS\" are not treated as special cases.\n" << std::endl;
         std::cout << cmdOpts << std::endl;
         return 0;
     }

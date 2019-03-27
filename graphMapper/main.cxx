@@ -30,8 +30,8 @@ int main(int argc, char** argv)
     po::options_description allSrcs("All configuration");
     allSrcs.add_options()
         ("hash-lookup,l", po::value<std::vector<std::string>>()->multitoken()->composing(), "List of file hashes to look up the source file of, out of the input files. Disables listing the hashes of the input files.")
-        ("force-list-hashes,f", po::bool_switch(), "Forces listing the hashes of the input files, even if --hash-lookup is also specified.")
-        ("pretty-print,p", po::bool_switch(), "Pads out the output into nice columns");
+        ("force-list-hashes,f", po::bool_switch(), "Forces listing the hashes of the input files, even if --hash-lookup is also specified.");
+        //("pretty-print,p", po::bool_switch(), "Pads out the output into nice columns");
     addGraphFileOpts(allSrcs);
 
     po::options_description cmdOpts;
