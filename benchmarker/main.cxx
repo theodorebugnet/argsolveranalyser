@@ -163,7 +163,6 @@ int main(int argc, char** argv)
         //runId = std::chrono::format("%FT%TZ", std::chrono::floor<std::chrono::milliseconds>(now));
         //Well this is what I WOULD use if GCC supported P0355R7, but...
         runId = date::format("%FT%TZ", date::floor<std::chrono::milliseconds>(now));
-        //...instead I have to use a 200+KB library if I don't want to implement date formatting by hand.
     }
     else
     {   runId = opts["run-id"].as<std::string>();
@@ -312,7 +311,7 @@ int main(int argc, char** argv)
             }
 
             //check reference solution exists here else act accordingly
-            fs::path solfp = (soldir / (problem + ":" + additionalArg));
+            fs::path solfp = (soldir / (problem + (additionalArg == ""? "" : ":" + additionalArg)));
             if (!fs::exists(solfp))
             {
                 if (referenceSolverpath == "")
@@ -328,7 +327,6 @@ int main(int argc, char** argv)
                     }
 
                     //setup output
-                    std::cout << "Trying to create " << solfp.string() << std::endl;
                     int outfd = creat(solfp.c_str(), 0644);
                     if (outfd < 0)
                     {   std::cerr << "ERROR: Unable to open solution output file for writing. Skipping this problem." << std::endl;
@@ -498,15 +496,17 @@ int main(int argc, char** argv)
 
             //save to .stat here
             std::ofstream statof(resfp, std::ios::app);
-            statof << "ISCORRECT=" << is_correct << "\n"
+            statof << "ISCORRECT=" << (is_correct? "true" : "false" ) << "\n"
                 << "TOTALEXTS=" << total << "\n"
                 << "CORRECTEXTS=" << correct << "\n"
                 << "WRONGEXTS=" << wrong << std::endl;
 
             //now cleanup results if they're too large
-            if (is_correct && saveCorrectMaxSize > 0 && (!saveAll || fs::file_size(outfp) > saveCorrectMaxSize))
-            {   if (verbose) std::cout << "    Removing (correct) solution as it's above max size" << std::endl;
-                fs::remove(outfp);
+            if (is_correct)
+            {   if(!saveAll || (saveCorrectMaxSize > 0 && fs::file_size(outfp) > saveCorrectMaxSize))
+                {   if (verbose) std::cout << "    Removing (correct) solution as " << (saveAll? "it's above max size" : "--save-all was not passed") << std::endl;
+                    fs::remove(outfp);
+                }
             }
             else if (!is_correct && saveMaxSize > 0 && fs::file_size(outfp) > saveMaxSize)
             {   if (verbose) std::cout << "    Removing (incorrect) solution as it's above max size" << std::endl;

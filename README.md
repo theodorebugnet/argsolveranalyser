@@ -72,3 +72,6 @@ The list of metrics is meant to be extensible: it is simple to add a new class t
 As an alternative, any executable file in the directory `store/external-metrics` will also be loaded as a metric. The metric name in this case will be the filename of the executable, without the extension. The executable should take exactly one argument, the path to the graph file, and print out to stdout the score, which should be parseable as a `double`. It should exit with a status of 0: any other exit status will result in an error, and the value returned (if any will be rejected).
 
 This allows new metrics to be easily created without recompiling any other code; it also gives a lot of flexibility in how metrics are developed - the executable could be anything from a Python script to a wrapper calling an external tool located elsewhere.
+
+# License
+This program is released under the GNU General Public License, version 3 or (at your option) any later version. For more information, see LICENSE.txt or https://www.gnu.org/licenses/.

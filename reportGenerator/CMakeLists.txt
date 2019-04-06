@@ -8,5 +8,5 @@ target_link_libraries(report_generator stdc++fs)
 target_link_libraries(report_generator common)
 set_target_properties(report_generator PROPERTIES
     COTIRE_ADD_UNITY_BUILD FALSE
-    COTIRE_PREFIX_HEADER_IGNORE_PATH "")
+    COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/common/")
 cotire(report_generator)

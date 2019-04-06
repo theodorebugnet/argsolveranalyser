@@ -18,6 +18,11 @@ std::string Graph::fname() const
     return infname;
 }
 
+unsigned long Graph::size() const
+{
+    return args.size(); //currently not taking into account attack number
+}
+
 std::string Graph::hash() const
 {
     return hashval;

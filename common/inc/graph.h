@@ -42,6 +42,7 @@ class Graph
         //void addAttack(std::string, std::string); //currently has abysmal performance - not exposed pending rewrite, which is deferred since it's not clear this overload is actually useful
         std::string hash() const;
         std::string fname() const;
+        unsigned long size() const;
     private:
         std::string hashval;
         std::string infname;

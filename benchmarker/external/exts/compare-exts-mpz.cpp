@@ -1,6 +1,65 @@
+// DEVELOPMENT HISTORY:
+// 2.74: Ground only relevant SCCs, as grounding layer was taking
+// too long in some problems.
+
 /*
-   Copyright (c) 2017 Odinaldo Rodrigues.
-   King's College London.
+ Copyright (c) 2017 Odinaldo Rodrigues.
+ King's College London.
+
+ Compile with
+   g++ -std=c++11 -c grounder.cpp
+   g++ -std=c++11 -c eqargsolver-2.2.cpp
+   g++ -o eqargsolver-2.2 eqargsolver-2.2.o grounder.o
+
+ EqArgSolver is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+ v2.2: This version can be used in decision and enumeration problems
+ for the grounded, complete, preferred and stable semantics.
+
+ Computation is done via decomposition of the network into layers,
+ which are then successively processed. The outline of execution is
+ more or less as follows.
+
+  1. The graph is divided into SCCs and arranged into layers
+  2. The trivial SCCs in a layer are combined and jointly processed.
+     Each non-trivial SCC in a layer is processed individually
+     in ascending layer order.
+  3. Each layer is conditioned by a partial solution for
+     the previous layers. The conditioning values are propagated using a
+     grounding mechanism based on the discrete Gabbay-Rodrigues iteration
+     schema. The grounding resolves all nodes in trivial SCCs of
+     that layer and possibly some nodes in the non-trivial SCCs.
+  4. However, some nodes in the non-trivial SCCs may still be left
+     undecided. Finding legal values in the set {0,1} for these nodes
+     give rise to complete extensions that may be larger than the
+     grounded extension.
+    4.1 The remaining undecided nodes cannot be attacked by any node that
+        is legally IN (otherwise the grounding would have labelled
+	      them OUT). This means that within each working layer conditioned by a
+        partial solution to the previous layers, some nodes could possibly
+	      be labelled IN resulting in a complete extension larger than the
+	      in the extension originally computed.
+    4.3 The algorithm tries to label each of these nodes IN in sequence, propagating
+        the label forwards and backwards as needed. Of course in a cyclic SCC, the
+	      propagation may not succeed, but if it does, this will generate a new
+        (larger) extension. This process is applied recursively until no further
+        extensions can be generated. This produces all new partial solutions up to
+	      the current layer and the process continues until all layers have been
+	      processed.
+    4.4 The maximal extensions obtained in this way are the preferred extensions.
+        If a preferred extension has no undecided nodes, then it is also stable.
+
 */
 
 #include <map>

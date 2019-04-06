@@ -20,6 +20,7 @@
 #include "metricset.h"
 #include "_externalMetric.cxx"
 #include "graphhashset.h"
+#include "sccMetrics.cxx"
 
 #ifndef CONF_PATH
     #define CONF_PATH "./analyser.coonf"
@@ -37,6 +38,8 @@ int main(int argc, char** argv)
     /******** Preliminary list of metrics ********/
     metrics.push_back(std::make_unique<SizeMetric>());
     metrics.push_back(std::make_unique<SparsenessMetric>());
+    metrics.push_back(std::make_unique<SCCCountMetric>());
+    metrics.push_back(std::make_unique<SCCDensityMetric>());
 
     /******** Define configuration options ********/
     //only for command line

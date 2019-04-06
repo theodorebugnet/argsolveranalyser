@@ -5,6 +5,6 @@ class SizeMetric : public Metric {
         SizeMetric() :Metric("Size") {
         }
         double calculate(const Graph& graph) const {
-            return graph.getArgs().size();
+            return graph.size();
         };
 };

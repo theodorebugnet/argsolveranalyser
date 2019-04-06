@@ -22,6 +22,9 @@
 #ifndef CONF_PATH
     #define CONF_PATH "./analyser.coonf"
 #endif
+#ifndef STORE_PATH
+    #define STORE_PATH "./stoore"
+#endif
 
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
@@ -41,11 +44,12 @@ int main(int argc, char** argv)
     //for both cmdline and config file
     po::options_description allSrcs("All configuration");
     allSrcs.add_options()
+        ("store-path,S", po::value<std::string>()->default_value(STORE_PATH), "Store directory\n")
         ("list-types,l", po::bool_switch(), "Print the available report types and exit.\n")
         ("type,t", po::value<std::string>(), "Report type to generate.\n")
-        ("solver,s", po::value<std::string>(), "The name of the solver to focus on.\n")
-        ("start-date,r", po::value<std::string>(), "For report type Evolution: earliest date to consider.\n")
-        ("end-date,R", po::value<std::string>(), "For report type Evolution: latest date to consider.\n");
+        ("solver,s", po::value<std::string>(), "The name of the solver to focus on.\n");
+//        ("start-date,r", po::value<std::string>(), "For report type Evolution: earliest date to consider.\n")
+//        ("end-date,R", po::value<std::string>(), "For report type Evolution: latest date to consider.\n");
 
     addQuietVerboseOpts(allSrcs);
 
