@@ -18,6 +18,7 @@ class MetricSet
         void setScore(std::string, double);
         void save() const;
         void clear();
+        const std::map<std::string, double>& getAllScores() const;
     private:
         fs::path scoreFilePath;
         std::map<std::string, double> metricScores;

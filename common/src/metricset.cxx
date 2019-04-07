@@ -58,3 +58,8 @@ void MetricSet::clear()
 {
     metricScores.clear();
 }
+
+const std::map<std::string, double>& MetricSet::getAllScores() const
+{
+    return metricScores;
+}

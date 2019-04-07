@@ -18,6 +18,7 @@
 #include "metricset.h"
 #include "generator.h"
 #include "evolutionGenerator.cxx"
+#include "regressionGenerator.cxx"
 
 #ifndef CONF_PATH
     #define CONF_PATH "./analyser.coonf"
@@ -35,6 +36,7 @@ int main(int argc, char** argv)
 {
     /******** List of generators ********/
     generators.push_back(std::make_unique<EvolutionGenerator>());
+    generators.push_back(std::make_unique<RegressionGenerator>());
 
     /******** Define configuration options ********/
     //only for command line
@@ -48,8 +50,6 @@ int main(int argc, char** argv)
         ("list-types,l", po::bool_switch(), "Print the available report types and exit.\n")
         ("type,t", po::value<std::string>(), "Report type to generate.\n")
         ("solver,s", po::value<std::string>(), "The name of the solver to focus on.\n");
-//        ("start-date,r", po::value<std::string>(), "For report type Evolution: earliest date to consider.\n")
-//        ("end-date,R", po::value<std::string>(), "For report type Evolution: latest date to consider.\n");
 
     addQuietVerboseOpts(allSrcs);
 
