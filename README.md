@@ -4,6 +4,8 @@ AAF and solver benchmarking and analysis toolkit.
 # Quick start
 The archive contains a full, ready to use environment in the `install-final` folder. To rebuild from source: ensure the necessary dependencies (CMake, Boost, a recent version of GCC/Clang) are installed; in the root `CMakeLists.txt`, configure `INSTALL\_PREF` as desired; `cd build` and run `make install`.
 
+Then place some graphs into store/graphs (or use the -g/-d options to specify graphs), run `graph\_analyser` to generate metric scores and/or `benchmarker` with proper options (see `benchmarker -h`) to generate solver performance data, and then either peruse the store or generate an report on the data using `report\_generator -t <type> [other options]` (see `report\_generator -h` for more information).
+
 ## Installation
 ### Prerequisites
 * Cmake
@@ -75,6 +77,18 @@ The list of metrics is meant to be extensible: it is simple to add a new class t
 As an alternative, any executable file in the directory `store/external-metrics` will also be loaded as a metric. The metric name in this case will be the filename of the executable, without the extension. The executable should take exactly one argument, the path to the graph file, and print out to stdout the score, which should be parseable as a `double`. It should exit with a status of 0: any other exit status will result in an error, and the value returned (if any will be rejected).
 
 This allows new metrics to be easily created without recompiling any other code; it also gives a lot of flexibility in how metrics are developed - the executable could be anything from a Python script to a wrapper calling an external tool located elsewhere.
+
+### Graph hashing
+Graphs are hashed with SpookyHash (http://burtleburtle.net/bob/hash/spooky.html) to ensure no duplication. `graph_mapper` can be used to quickly check what a graph's hash is, or what graph file a hash belongs to. The file `store/graphhashmap` stores key-value pairs between graph filepath and hash, as a cache, and can also be easily explored or `grep`ed manually.
+
+## Store
+The store is where all the data is saved; here is an overview of its structure.
+### `graph-scores`
+Each file here corresponds to a graph. The format of the files should be self-explanatory: each line gives the value of a metric.
+### `bench-solutions`
+Here the solutions for every problem are stored, in subdirectories corresponding to each graph. Each problem has its own file, named after the problem, containing the output of the reference solver used verbatim
+### `benchmarks`
+The output of benchmark runs. Each subfolder here corresponds to a solver. Inside a solver's folder, there is a subfolder for every run ID, inside of which the actual run information is stored. Each benchmark run has a subfolder for every graph, inside which each problem has either 1 or 2 corresponding files named after it: a `<PROBLEM>.stat` file and a `<PROBLEM>.output` file. The latter contains the solver output verbatim, and may not be kept depending on the options passed to `benchmarker` (by default, only outputs for incorrect solutions are kept; you can also specify the max size of solutions to keep). The .stat file contains the performance data of the solver.
 
 # License
 This program is released under the GNU General Public License, version 3 or (at your option) any later version. For more information, see LICENSE.txt or https://www.gnu.org/licenses/.

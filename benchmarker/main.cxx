@@ -34,6 +34,8 @@
 namespace po = boost::program_options;
 namespace fs = std::filesystem;
 
+const int magic_number = 143; //randomly selected, used as special return value
+
 unsigned long getSizeInBytes(std::string sizeWithSuffix)
 {
     unsigned long ret = 0;
@@ -316,10 +318,14 @@ int main(int argc, char** argv)
             {
                 if (referenceSolverpath == "")
                 {   if (!quiet)
-                    {   std::cout << "No reference solver specified and no solution for graph " << graphFile
+                    {   std::cout << "INFO: No reference solver specified and no solution for graph " << graphFile
                             << " and problem " << fullproblem << "; skipping." << std::endl;
                         continue;
                     }
+                }
+                else if (!fs::exists(referenceSolverpath) || !(fs::is_regular_file(referenceSolverpath) || fs::is_symlink(referenceSolverpath)))
+                {   std::cerr << "WARNING: Reference solver path does not point to a file. Double-check the filepath. Skipping graphs with no existing solutions." << std::endl;
+                    continue;
                 }
                 else
                 {   if (verbose)
@@ -341,7 +347,18 @@ int main(int argc, char** argv)
                         continue;
                     }
                     else if (pid > 0) //parent
-                    {   wait(NULL);
+                    {   int status;
+                        wait(&status);
+                        if (!WIFEXITED(status) || (WIFEXITED(status) && WEXITSTATUS(status) == magic_number))
+                        {   std::cerr << "ERROR: Unable to execute reference solver! Skipping graph." << std::endl;
+                            if(!fs::remove(solfp))
+                            {   std::cerr << "Could not remove solution file..." << std::endl;
+                            }
+                            continue;
+                        }
+                        else if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+                        {   std::cerr << "WARNING: Reference solver exited with non-zero status: " << WEXITSTATUS(status) << std::endl;
+                        }
                     }
                     else //child
                     {   if (dup2(outfd, STDOUT_FILENO) < 0)
@@ -364,7 +381,7 @@ int main(int argc, char** argv)
                         args[argvct.size()] = NULL;
 
                         execv(referenceSolverpath.c_str(), (char**)args);
-                        std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+                        return magic_number;
                     }
                 }
             }
@@ -384,7 +401,16 @@ int main(int argc, char** argv)
                 continue;
             }
             else if (pid > 0) //parent
-            {   wait(NULL);
+            {   int status;
+                wait(&status);
+                if (!WIFEXITED(status) || (WIFEXITED(status) && WEXITSTATUS(status) == magic_number))
+                {   std::cerr << "FATAL ERROR: Failed to execute runsolver. Aborting!" << std::endl;
+                    continue;
+                }
+                else if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+                {   std::cerr << "WARNING: Runsolver exited with non-zero status. Skipping further processing." << std::endl;
+                    continue;
+                }
             }
             else //child
             {   const char* runsolver = BIN_PATH "/runsolver";
@@ -420,7 +446,7 @@ int main(int argc, char** argv)
                 args[argvct.size()] = NULL;
 
                 execv(runsolver, (char**)args);
-                std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+                return magic_number;
             }
 
             //runsolver is done
@@ -458,9 +484,6 @@ int main(int argc, char** argv)
                     << ". No correctness report will be generated. Error message: " << status << std::endl;
                     in.close();
                     is_correct = false; //provide default
-                    if (fs::file_size(outfp) >= saveMaxSize)
-                    {   fs::remove(outfp);
-                    }
                 }
                 else
                 {   is_correct = (status == "OK"? true : false);
