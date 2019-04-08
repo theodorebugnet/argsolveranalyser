@@ -457,6 +457,7 @@ int main(int argc, char** argv)
                 {   std::cerr << "ERROR: Unable to verify solution " << outfp << " against master " << solfp
                     << ". No correctness report will be generated. Error message: " << status << std::endl;
                     in.close();
+                    is_correct = false; //provide default
                     if (fs::file_size(outfp) >= saveMaxSize)
                     {   fs::remove(outfp);
                     }
@@ -478,7 +479,7 @@ int main(int argc, char** argv)
                     }
                     in.close();
 
-                    int err, status;
+                    int err, status = 0;
                     if ((err = in.rdbuf()->error()) == 0 && in.rdbuf()->exited()) {
                         status = in.rdbuf()->status();
                     } else {

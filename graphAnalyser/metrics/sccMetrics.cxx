@@ -118,7 +118,7 @@ class SCCDensityMetric : public Metric
             {   return 1;
             }
 
-            double logsum;
+            double logsum = 0;
             for (std::vector<AugmentedArg>& scc : SCCs)
             {   logsum += std::log(scc.size());
             }

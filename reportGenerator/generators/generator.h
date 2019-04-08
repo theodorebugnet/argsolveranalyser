@@ -130,14 +130,14 @@ void Generator::run() //loads the set of results for individual generators to us
                 std::ifstream resfs(resfile.path());
                 std::string tokbuff;
 
-                bool is_correct;
-                bool timeout;
-                bool memout;
-                double time;
-                unsigned long mem;
-                unsigned long total;
-                unsigned long correct;
-                unsigned long wrong;
+                bool is_correct = false;
+                bool timeout = false;
+                bool memout = false;
+                double time = 0;
+                unsigned long mem = 0;
+                unsigned long total = 0;
+                unsigned long correct = 0;
+                unsigned long wrong = 0;
                 while (resfs >> tokbuff)
                 {   size_t eqpos = tokbuff.find('=');
                     if (eqpos == std::string::npos)

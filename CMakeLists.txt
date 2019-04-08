@@ -14,7 +14,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g")# -pg")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 #Customise these values to customise the installation
-SET(INSTALL_PREF "/home/void/Uni/Y3/PRJ/install/") #Unset for installation to default binary directory
+SET(INSTALL_PREF "../../install-test/") #Unset for installation to default binary directory, or change to a different portable directory
 SET(STORE_PATH "./store/") #Unless installing to a self-contained location, this should probably be an absolute path, e.g. inside ~
 SET(CONF_PREFIX "./conf/") #Same for this, alternatively set this to a path in /etc/
 SET(CONF_PATH_ANALYSER "./graph_analyser.conf") #The next three are names of files inside CONF_PREFIX

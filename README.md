@@ -1,10 +1,13 @@
 # y3project
 AAF and solver benchmarking and analysis toolkit.
 
+# Quick start
+The archive contains a full, ready to use environment in the `install-final` folder. To rebuild from source: ensure the necessary dependencies (CMake, Boost, a recent version of GCC/Clang) are installed; in the root `CMakeLists.txt`, configure `INSTALL\_PREF` as desired; `cd build` and run `make install`.
+
 ## Installation
 ### Prerequisites
 * Cmake
-* boost::program\_options
+* Boost.Program\_options
 * A C++17 compatible compiler
 ### Configuration
 A number of variables can be configured in the root CMakeLists.txt:
