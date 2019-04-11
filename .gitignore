@@ -1,3 +1,5 @@
+store/graphs/*
 build/*
+!build/.gitkeep
 *.o
 *~

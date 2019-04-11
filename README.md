@@ -1,8 +1,8 @@
-# y3project
+# argsolveranalyser
 AAF and solver benchmarking and analysis toolkit.
 
 # Quick start
-The archive contains a full, ready to use environment in the `install-final` folder. To rebuild from source: ensure the necessary dependencies (CMake, Boost, a recent version of GCC/Clang) are installed; in the root `CMakeLists.txt`, configure `INSTALL\_PREF` as desired; `cd build` and run `make install`.
+To build from source: ensure the necessary dependencies (CMake, Boost, a recent version of GCC/Clang) are installed; in the root `CMakeLists.txt`, configure `INSTALL\_PREF` as desired; `cd build` and run `make install`.
 
 Then place some graphs into store/graphs (or use the -g/-d options to specify graphs), run `graph\_analyser` to generate metric scores and/or `benchmarker` with proper options (see `benchmarker -h`) to generate solver performance data, and then either peruse the store or generate an report on the data using `report\_generator -t <type> [other options]` (see `report\_generator -h` for more information).
 
